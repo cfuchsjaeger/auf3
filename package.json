@@ -52,7 +52,8 @@
     "typecheck": "tsc --noEmit",
     "test:db": "bash supabase/tests/run.sh",
     "test:e2e": "bash e2e/run.sh",
-    "test:db:supabase": "bash supabase/tests/run-supabase.sh"
+    "test:db:supabase": "bash supabase/tests/run-supabase.sh",
+    "ios:lokal": "APP_VARIANT=lokal expo run:ios --device --configuration Release"
   },
   "private": true
 }

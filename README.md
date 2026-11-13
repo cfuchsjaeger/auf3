@@ -28,11 +28,10 @@ npm run typecheck
 npx expo lint
 ```
 
-`expo-haptics`, `expo-audio`, `expo-sensors` und `react-native-view-shot` sind native Module. Auf dem Handy braucht es deshalb einen Development Build statt Expo Go:
+Expo Go aus dem App Store unterstützt nur bis SDK 54, diese App nutzt SDK 58. Aufs iPhone kommt sie deshalb als eigener Build:
 
-```bash
-npx eas-cli@latest build --profile development --platform ios
-```
+- **Kostenlos mit Mac und Xcode:** Anleitung in [docs/ios-lokal.md](docs/ios-lokal.md). Läuft 7 Tage pro Installation.
+- **Mit Apple-Mitgliedschaft:** Expo Build verteilt die App per Link, siehe Profile in `eas.json`.
 
 ## Aufbau
 
@@ -56,6 +55,7 @@ Grundsätze:
 ## Dokumente
 
 - [Produkt- und Architekturplan](docs/plan.md) mit UI-Konzept und Umsetzungsstand
+- [Kostenlos aufs iPhone mit Xcode](docs/ios-lokal.md)
 
 ## Bekannte Grenzen
 
