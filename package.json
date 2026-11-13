@@ -51,7 +51,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "test:db": "bash supabase/tests/run.sh",
-    "test:e2e": "bash e2e/run.sh"
+    "test:e2e": "bash e2e/run.sh",
+    "test:db:supabase": "bash supabase/tests/run-supabase.sh"
   },
   "private": true
 }

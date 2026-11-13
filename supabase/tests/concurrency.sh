@@ -8,7 +8,7 @@ N=${N:-40}
 P=(psql -h "$PGHOST" -p "$PGPORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q -X -t -A)
 
 "${P[@]}" -o /dev/null <<'SQL'
-insert into auth.users values ('00000000-0000-0000-0000-0000000000f1'), ('00000000-0000-0000-0000-0000000000f2');
+insert into auth.users (id) values ('00000000-0000-0000-0000-0000000000f1'), ('00000000-0000-0000-0000-0000000000f2');
 insert into public.profiles (id, handle) values ('00000000-0000-0000-0000-0000000000f1', 'A'), ('00000000-0000-0000-0000-0000000000f2', 'B');
 insert into public.crews (id, name, invite_code, created_by)
   values ('00000000-0000-0000-0000-0000000000cc', 'Race', 'RACE0000', '00000000-0000-0000-0000-0000000000f1');

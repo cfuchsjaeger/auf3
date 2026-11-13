@@ -22,6 +22,7 @@ npm run web          # im Browser starten
 npm start            # Expo-Dev-Server für Handy (Development Build nötig, siehe unten)
 npm test             # Spiellogik (Vitest)
 npm run test:db      # Datenbank-Funktionen und RLS gegen ein Wegwerf-Postgres 16
+npm run test:db:supabase  # dieselben Tests gegen das offizielle Supabase-Image (Docker)
 npm run test:e2e     # kompletter Abend im Browser, Screenshots in e2e/screenshots
 npm run typecheck
 npx expo lint
@@ -51,6 +52,10 @@ Grundsätze:
 - **Eine Regelquelle.** `src/domain/rules.ts` und die Postgres-Funktionen in `supabase/migrations` implementieren dieselbe Zustandsmaschine. Wer eine Regel ändert, ändert beide und beide Testsuites.
 - **Clients schreiben nie direkt.** Im Live-Modus laufen alle Spielzüge über Datenbankfunktionen. Die Zahl des Gegenübers ist per Row Level Security bis zum Reveal unsichtbar.
 - **Gimmicks erst nach dem Pick.** Quote stellen, Range setzen, Zahl tippen sind schnell und nüchtern. Countdown, Reveal und Beleg dürfen angeben.
+
+## Dokumente
+
+- [Produkt- und Architekturplan](docs/plan.md) mit UI-Konzept und Umsetzungsstand
 
 ## Bekannte Grenzen
 

@@ -45,7 +45,7 @@ grant execute on all functions in schema test to authenticated;
 create table test.ctx (key text primary key, id uuid);
 grant all on test.ctx to authenticated;
 
-insert into auth.users values (test.uid('max')), (test.uid('tom')), (test.uid('luki')), (test.uid('eve'));
+insert into auth.users (id) values (test.uid('max')), (test.uid('tom')), (test.uid('luki')), (test.uid('eve'));
 
 set role authenticated;
 
