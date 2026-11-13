@@ -167,3 +167,17 @@ export function leaderboard(session: Session, board: Board, stats = computeStats
     return { ...row, rank };
   });
 }
+
+/** Wie oft ein Spieler eine bestimmte Zahl im Event getippt hat (nur vollständige Runden). */
+export function timesPicked(session: Session, playerId: string, value: number): number {
+  let count = 0;
+  for (const q of session.quotes) {
+    for (const round of q.rounds) {
+      const { challenger, target } = round.picks;
+      if (challenger === undefined || target === undefined) continue;
+      if (q.challengerId === playerId && challenger === value) count++;
+      if (q.targetId === playerId && target === value) count++;
+    }
+  }
+  return count;
+}

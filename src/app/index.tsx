@@ -1,98 +1,174 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { openDares, playerById } from '@/domain';
+import { useStore } from '@/state/store';
+import { BlockButton } from '@/ui/BlockButton';
+import { PlayerChip } from '@/ui/PlayerChip';
+import { Screen } from '@/ui/Screen';
+import { T } from '@/ui/Text';
+import { colors, fonts, layout } from '@/ui/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+function daysAgo(ms: number): string {
+  const days = Math.floor((Date.now() - ms) / 86_400_000);
+  if (days <= 0) return 'seit heute';
+  if (days === 1) return 'seit gestern';
+  return `seit ${days} Tagen`;
+}
+
+export default function Start() {
+  const { session, store } = useStore();
+  if (!session) return <Welcome hasArchive={store.archive.length > 0} />;
+
+  const open = openDares(session);
+  const oldest = open[0];
+  const running = [...session.quotes].reverse().find((q) => q.status === 'awaitingRange' || q.status === 'picking');
+  const others = session.players.filter((p) => p.id !== store.meId);
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <Screen scroll>
+      <View style={styles.header}>
+        <Text style={styles.wordmark}>AUF 3</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Abrechnung ${session.name}`}
+          onPress={() => router.push('/ledger')}
+          style={({ pressed }) => [styles.pill, pressed && { borderColor: colors.signal }]}>
+          <View style={styles.pillDot} />
+          <Text numberOfLines={1} style={styles.pillText}>
+            {session.name.toUpperCase()} · {session.players.length}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.hero}>
+        <BlockButton
+          testID="quote-button"
+          label="QUOTE"
+          size="hero"
+          accessibilityHint="Neue Quote stellen"
+          onPress={() => router.push('/quote/new')}
+          style={{ width: 280 }}
+        />
+        <T variant="body" style={styles.tagline}>
+          Tippen. Jemanden aussuchen. Fertig.
+        </T>
+      </View>
+
+      {running ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push(`/quote/${running.id}`)}
+          style={({ pressed }) => [styles.card, styles.cardSignal, pressed && styles.cardPressed]}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T variant="label">LAUFENDE QUOTE</T>
+            <T variant="bodyStrong" numberOfLines={1}>
+              {playerById(session, running.challengerId).name} → {playerById(session, running.targetId).name}:{' '}
+              {running.dare}
+            </T>
+          </View>
+          <Text style={[styles.bigNumber, { color: colors.signal }]}>▶</Text>
+        </Pressable>
+      ) : null}
+
+      {open.length > 0 && oldest ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/ledger')}
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <T variant="label">OFFENE SCHULDEN</T>
+            <T variant="bodyStrong">
+              {playerById(session, oldest.owedBy).name} schuldet {playerById(session, oldest.owedTo).name}{' '}
+              {daysAgo(oldest.createdAt)}.
+            </T>
+          </View>
+          <Text style={styles.bigNumber}>{open.length}</Text>
+        </Pressable>
+      ) : null}
+
+      <View style={{ gap: 10 }}>
+        <T variant="label">DIREKT QUOTEN</T>
+        <View style={styles.grid}>
+          {others.map((p) => (
+            <PlayerChip
+              key={p.id}
+              name={p.name}
+              onPress={() => router.push({ pathname: '/quote/new', params: { target: p.id } })}
+            />
+          ))}
+        </View>
+      </View>
+    </Screen>
   );
 }
 
-export default function HomeScreen() {
+function Welcome({ hasArchive }: { hasArchive: boolean }) {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+    <Screen style={{ justifyContent: 'space-between' }}>
+      <View style={{ gap: 28, marginTop: 40 }}>
+        <Text style={[styles.wordmark, styles.wordmarkXL]}>AUF 3</Text>
+        <T variant="title">Das Quotenspiel.{'\n'}Für den Tisch.</T>
+        <View style={{ gap: 14 }}>
+          {[
+            ['1', 'Jemand quotet dich. Du setzt die Quote: 2 ist mutig, 50 ist feig.'],
+            ['2', 'Beide tippen geheim eine Zahl. Handy umdrehen, auf 3 aufdecken.'],
+            ['3', 'Gleiche Zahl: du musst. Daneben: Gegenquote, gleiche Range.'],
+          ].map(([n, text]) => (
+            <View key={n} style={{ flexDirection: 'row', gap: 14 }}>
+              <Text style={styles.step}>{n}</Text>
+              <T variant="body" style={{ flex: 1, color: colors.text2 }}>
+                {text}
+              </T>
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={{ gap: 12 }}>
+        <BlockButton testID="start-event" label="EVENT STARTEN" onPress={() => router.push('/setup')} />
+        {hasArchive ? (
+          <BlockButton
+            label="Letztes Event ansehen"
+            variant="ghost"
+            size="md"
+            onPress={() => router.push({ pathname: '/ledger', params: { archive: '0' } })}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        ) : null}
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  wordmark: { fontFamily: fonts.pixelBold, fontSize: 22, letterSpacing: 1, color: colors.signal },
+  wordmarkXL: { fontSize: 64, lineHeight: 70 },
+  pill: {
     flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
     alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    gap: 8,
+    borderWidth: layout.border,
+    borderColor: colors.text,
+    paddingHorizontal: 10,
+    minHeight: layout.touch,
+    flexShrink: 1,
   },
-  heroSection: {
+  pillDot: { width: 10, height: 10, backgroundColor: colors.signal },
+  pillText: { fontFamily: fonts.bodyBold, fontSize: 13, letterSpacing: 0.5, color: colors.text, flexShrink: 1 },
+  hero: { alignItems: 'center', gap: 18, paddingVertical: 12 },
+  tagline: { color: colors.text2, textAlign: 'center' },
+  card: {
+    borderWidth: layout.border,
+    borderColor: colors.text,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    gap: 12,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  cardSignal: { borderColor: colors.signal },
+  cardPressed: { backgroundColor: colors.surface },
+  bigNumber: { fontFamily: fonts.pixelBold, fontSize: 32, color: colors.warn },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  step: { fontFamily: fonts.pixelBold, fontSize: 22, color: colors.signal, width: 20 },
 });

@@ -88,3 +88,15 @@ describe('Ehre und Lieblingszahl', () => {
     expect(computeStats(s).tom.favoritePick?.value).toBe(4);
   });
 });
+
+describe('timesPicked', () => {
+  it('zählt nur vollständige Runden, getrennt nach Spieler', async () => {
+    const { timesPicked } = await import('../scoring');
+    let s = crew();
+    s = quote(s, 'a', 'max', 'tom', [R(10), C(7), T(3), C(7), T(7)]);
+    s = quote(s, 'b', 'tom', 'max', [R(10), C(7)]);
+    expect(timesPicked(s, 'tom', 7)).toBe(1);
+    expect(timesPicked(s, 'max', 7)).toBe(2);
+    expect(timesPicked(s, 'tom', 3)).toBe(1);
+  });
+});

@@ -1,56 +1,59 @@
-# Welcome to your Expo app 👋
+# Auf 3
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Das Quotenspiel als App für iOS und Android. Jemand quotet dich, du setzt die Quote zwischen 2 und 50, beide tippen geheim eine Zahl, auf 3 wird aufgedeckt. Gleiche Zahl: du musst. Daneben: Gegenquote mit gleicher Range.
 
-## Get started
+![Screens](docs/screens.png)
 
-1. Install dependencies
+## Stand
 
-   ```bash
-   npm install
-   ```
+| Bereich | Status |
+|---|---|
+| Spielregeln, Schuldenbuch, Ranglisten, Avatare, Kommentare | fertig, getestet |
+| Bar-Modus mit einem Handy, offline, gespeichert auf dem Gerät | fertig, im Browser durchgespielt |
+| Haptik, Sounds, Umdreh-Erkennung | gebaut, auf echten Geräten noch nicht getestet |
+| Server-Schema für den Live-Modus mit zwei Handys | fertig, gegen Postgres getestet |
+| Login, Crews und Live-Modus in der App | offen, braucht ein Supabase-Projekt |
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Befehle
 
 ```bash
-npm run reset-project
+npm install
+npm run web          # im Browser starten
+npm start            # Expo-Dev-Server für Handy (Development Build nötig, siehe unten)
+npm test             # Spiellogik (Vitest)
+npm run test:db      # Datenbank-Funktionen und RLS gegen ein Wegwerf-Postgres 16
+npm run test:e2e     # kompletter Abend im Browser, Screenshots in e2e/screenshots
+npm run typecheck
+npx expo lint
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+`expo-haptics`, `expo-audio`, `expo-sensors` und `react-native-view-shot` sind native Module. Auf dem Handy braucht es deshalb einen Development Build statt Expo Go:
 
-### Other setup steps
+```bash
+npx eas-cli@latest build --profile development --platform ios
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Aufbau
 
-## Learn more
+```
+src/domain/     Spielregeln als reine Funktionen. Keine Abhängigkeit zu React.
+src/feedback/   Haptik, Sound, Umdreh-Erkennung
+src/state/      Lokaler Spielstand (AsyncStorage)
+src/ui/         Tokens und Komponenten: Display, Keypad, BlockButton, Receipt, PixelAvatar, RangeSlider
+src/app/        Screens (Expo Router)
+supabase/       Migration und SQL-Tests für den Live-Modus
+scripts/        Erzeugt Sounds und Icons per Code, keine fremden Assets
+e2e/            Browser-Durchlauf mit Playwright
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Grundsätze:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Eine Regelquelle.** `src/domain/rules.ts` und die Postgres-Funktionen in `supabase/migrations` implementieren dieselbe Zustandsmaschine. Wer eine Regel ändert, ändert beide und beide Testsuites.
+- **Clients schreiben nie direkt.** Im Live-Modus laufen alle Spielzüge über Datenbankfunktionen. Die Zahl des Gegenübers ist per Row Level Security bis zum Reveal unsichtbar.
+- **Gimmicks erst nach dem Pick.** Quote stellen, Range setzen, Zahl tippen sind schnell und nüchtern. Countdown, Reveal und Beleg dürfen angeben.
 
-## Join the community
+## Bekannte Grenzen
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Die Umdreh-Erkennung nutzt das unterschiedliche Vorzeichen der Z-Achse auf iOS und Android. Das ist aus dem Quellcode von `expo-sensors` abgeleitet und muss auf echten Geräten bestätigt werden.
+- Teilen als Bild funktioniert nur nativ. Im Browser wird Text geteilt.
+- Der Verfall offener Quoten im Live-Modus braucht einen `pg_cron`-Job, siehe Kommentar in der Migration.
