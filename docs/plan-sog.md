@@ -1,6 +1,6 @@
 # Sog: Was das Spiel fesselnd macht
 
-Entwurf vom 14.11.2026, Vorschläge ohne Freigabe. Ergänzt `docs/plan-bar-modus.md`, dessen Phase A freigegeben und Phase B gestrichen ist.
+Stand 14.11.2026: Aus dem Bar-Modus sind Rivalität (3), Serien (4), Titel (5) und Chronik (6) gebaut, Branch `feature/bar-modus-2`. Topf und Tipprunde sind offen, die App-Version ist geparkt. Ergänzt `docs/plan-bar-modus.md`, dessen Phase A freigegeben und Phase B gestrichen ist.
 
 ## Grundsatz
 

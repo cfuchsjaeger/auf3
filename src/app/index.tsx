@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { openDares, playerById } from '@/domain';
+import { openDares, playerById, TITLE_LABEL, titlesFor, titlesOf } from '@/domain';
 import { useStore } from '@/state/store';
 import { BlockButton } from '@/ui/BlockButton';
 import { PlayerChip } from '@/ui/PlayerChip';
@@ -24,6 +24,7 @@ export default function Start() {
   const oldest = open[0];
   const running = [...session.quotes].reverse().find((q) => q.status === 'awaitingRange' || q.status === 'picking');
   const others = session.players.filter((p) => p.id !== store.meId);
+  const titles = titlesFor(session);
 
   return (
     <Screen scroll>
@@ -94,6 +95,7 @@ export default function Start() {
             <PlayerChip
               key={p.id}
               name={p.name}
+              badge={titlesOf(titles, p.id).map((t) => TITLE_LABEL[t])[0]}
               onPress={() => router.push({ pathname: '/quote/new', params: { target: p.id } })}
             />
           ))}

@@ -5,7 +5,7 @@ import {
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -16,6 +16,19 @@ import { StoreProvider, useStore } from '@/state/store';
 import { colors } from '@/ui/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Die Navigation malt beim Wischen ihren eigenen Hintergrund. Ohne Theme wäre das Hellgrau.
+const theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: colors.ground,
+    card: colors.ground,
+    border: colors.line,
+    text: colors.text,
+    primary: colors.signal,
+  },
+};
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -49,7 +62,7 @@ function Gate({ fontsReady }: { fontsReady: boolean }) {
 
   if (!show) return null;
   return (
-    <>
+    <ThemeProvider value={theme}>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -57,8 +70,11 @@ function Gate({ fontsReady }: { fontsReady: boolean }) {
           contentStyle: { backgroundColor: colors.ground },
           animation: 'fade',
           animationDuration: 120,
-        }}
-      />
-    </>
+        }}>
+        {/* Im laufenden Spiel kein Zurückwischen: Niemand fällt versehentlich aus einer Runde. */}
+        <Stack.Screen name="quote/[id]" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="receipt/[id]" options={{ gestureEnabled: false }} />
+      </Stack>
+    </ThemeProvider>
   );
 }

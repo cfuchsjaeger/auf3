@@ -1,40 +1,30 @@
-// Erzeugt die Chiptune-Sounds als WAV (22,05 kHz, 16 Bit, mono). Aufruf: node scripts/gen-sounds.mjs
-import { writeFileSync } from 'node:fs';
+// Erzeugt die vier Töne der App als WAV (22,05 kHz, 16 Bit, mono). Aufruf: node scripts/gen-sounds.mjs
+// Leitlinie: wenig, weich, leise. Ton nur für Höhepunkte, nie für Tasten.
+import { writeFileSync, readdirSync, unlinkSync } from 'node:fs';
 
 const RATE = 22050;
+const dir = new URL('../assets/sounds/', import.meta.url);
 
-function square(freq, ms, { volume = 0.35, duty = 0.5, decay = 0 } = {}) {
+/** Dreieckwelle mit etwas Sinus darunter: warm, nicht schneidend. */
+function tone(freq, ms, { volume = 0.12, attack = 8, decay = 3, sine = 0.5 } = {}) {
   const n = Math.round((RATE * ms) / 1000);
   const out = new Float32Array(n);
+  const a = Math.round((RATE * attack) / 1000);
   for (let i = 0; i < n; i++) {
-    const phase = ((i * freq) / RATE) % 1;
-    const env = decay ? Math.exp((-decay * i) / n) : 1;
-    out[i] = (phase < duty ? 1 : -1) * volume * env;
+    const t = i / RATE;
+    const phase = (t * freq) % 1;
+    const tri = 4 * Math.abs(phase - 0.5) - 1;
+    const sin = Math.sin(2 * Math.PI * freq * t);
+    const env = Math.min(1, i / a) * Math.exp((-decay * i) / n);
+    out[i] = ((1 - sine) * tri + sine * sin) * volume * env;
   }
   return out;
 }
 
-function slide(from, to, ms, opts = {}) {
-  const n = Math.round((RATE * ms) / 1000);
-  const out = new Float32Array(n);
-  let phase = 0;
-  for (let i = 0; i < n; i++) {
-    const f = from + ((to - from) * i) / n;
-    phase = (phase + f / RATE) % 1;
-    const env = Math.exp((-(opts.decay ?? 2) * i) / n);
-    out[i] = (phase < 0.5 ? 1 : -1) * (opts.volume ?? 0.4) * env;
-  }
-  return out;
-}
-
-function noise(ms, volume = 0.25) {
-  const n = Math.round((RATE * ms) / 1000);
-  const out = new Float32Array(n);
-  let seed = 1;
-  for (let i = 0; i < n; i++) {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    out[i] = ((seed / 0x7fffffff) * 2 - 1) * volume;
-  }
+function chord(freqs, ms, opts) {
+  const parts = freqs.map((f) => tone(f, ms, opts));
+  const out = new Float32Array(parts[0].length);
+  for (const p of parts) for (let i = 0; i < out.length; i++) out[i] += p[i] / parts.length;
   return out;
 }
 
@@ -50,19 +40,9 @@ function concat(...parts) {
   return out;
 }
 
-// Kurzes Ein- und Ausblenden gegen Knackser.
-function fade(samples, ms = 3) {
-  const n = Math.min(Math.round((RATE * ms) / 1000), samples.length >> 1);
-  for (let i = 0; i < n; i++) {
-    samples[i] *= i / n;
-    samples[samples.length - 1 - i] *= i / n;
-  }
-  return samples;
-}
-
 function wav(samples) {
   const data = Buffer.alloc(samples.length * 2);
-  samples.forEach((s, i) => data.writeInt16LE(Math.max(-1, Math.min(1, s)) * 32767, i * 2));
+  samples.forEach((s, i) => data.writeInt16LE(Math.round(Math.max(-1, Math.min(1, s)) * 32767), i * 2));
   const h = Buffer.alloc(44);
   h.write('RIFF', 0);
   h.writeUInt32LE(36 + data.length, 4);
@@ -80,23 +60,19 @@ function wav(samples) {
   return Buffer.concat([h, data]);
 }
 
+// Countdown: drei Schläge mit steigender Tonhöhe (A4, C#5, E5), der letzte etwas länger.
 const sounds = {
-  key: square(1320, 28, { volume: 0.22, duty: 0.25, decay: 3 }),
-  tick: square(2200, 10, { volume: 0.15, duty: 0.25 }),
-  lock: concat(square(880, 40, { volume: 0.3 }), silence(25), square(1320, 60, { volume: 0.3, decay: 2 })),
-  count: square(660, 90, { volume: 0.3, duty: 0.25, decay: 1.5 }),
-  hit: concat(
-    square(784, 70, { volume: 0.35 }),
-    square(988, 70, { volume: 0.35 }),
-    square(1175, 70, { volume: 0.35 }),
-    square(1568, 190, { volume: 0.35, decay: 2.5 }),
-  ),
-  miss: slide(330, 90, 260, { volume: 0.4, decay: 2.5 }),
-  counter: concat(slide(220, 660, 140, { volume: 0.3, decay: 0.5 }), square(660, 80, { volume: 0.3, decay: 2 })),
-  print: concat(...Array.from({ length: 9 }, () => concat(noise(22, 0.2), silence(24)))),
+  count1: tone(440, 110, { volume: 0.2, decay: 2.5 }),
+  count2: tone(554, 110, { volume: 0.22, decay: 2.5 }),
+  count3: tone(659, 160, { volume: 0.24, decay: 2 }),
+  // Treffer: warmer Dur-Akkord mit kurzem Nachklang.
+  hit: concat(chord([523, 659, 784], 90, { volume: 0.3, decay: 1 }), chord([659, 784, 1047], 420, { volume: 0.3, decay: 2.2 })),
+  // Knapp: zwei fallende Töne, eng beieinander.
+  near: concat(tone(587, 90, { volume: 0.2, decay: 2 }), silence(20), tone(554, 180, { volume: 0.2, decay: 2.5 })),
+  // Daneben: ein weicher, tiefer Ton.
+  miss: tone(196, 260, { volume: 0.22, attack: 15, decay: 3, sine: 0.8 }),
 };
 
-for (const [name, samples] of Object.entries(sounds)) {
-  writeFileSync(new URL(`../assets/sounds/${name}.wav`, import.meta.url), wav(fade(samples)));
-}
-console.log(`${Object.keys(sounds).length} Sounds geschrieben`);
+for (const f of readdirSync(dir)) if (f.endsWith('.wav')) unlinkSync(new URL(f, dir));
+for (const [name, samples] of Object.entries(sounds)) writeFileSync(new URL(`${name}.wav`, dir), wav(samples));
+console.log(`${Object.keys(sounds).length} Töne geschrieben`);

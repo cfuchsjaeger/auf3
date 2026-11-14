@@ -10,6 +10,7 @@ Das Quotenspiel als App für iOS und Android. Jemand quotet dich, du setzt die Q
 |---|---|
 | Spielregeln, Schuldenbuch, Ranglisten, Avatare, Kommentare | fertig, getestet |
 | Bar-Modus mit einem Handy, offline, gespeichert auf dem Gerät | fertig, im Browser durchgespielt |
+| Knapp-Moment, Rivalität, Serien, Titel, Chronik, vier Töne, Haptik-Crescendo, Reveal-Animationen | gebaut, Haptik und Ton am Gerät noch nicht geprüft |
 | Haptik, Sounds, Umdreh-Erkennung | gebaut, auf echten Geräten noch nicht getestet |
 | Server-Schema für den Live-Modus mit zwei Handys | fertig, gegen Postgres getestet |
 | Gruppen: anonymes Konto mit Namen, gründen, per WhatsApp oder Nachricht einladen, per Link oder Code beitreten, mehrere Gruppen, Event aus Gruppe starten | fertig, mit zwei Nutzern gegen lokales Supabase getestet |

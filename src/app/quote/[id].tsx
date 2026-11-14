@@ -5,12 +5,23 @@
  * Die Spielregeln entscheidet die Domänenlogik, dieser Screen inszeniert nur.
  */
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import {
   formatOneIn,
   formatPercent,
+  headToHead,
   hunterOf,
   loserIfHit,
   oddsFor,
@@ -18,13 +29,18 @@ import {
   playerIdFor,
   rangeVerdict,
   revealLine,
+  rivalryLine,
+  roundVerdict,
+  streakBrokenLine,
+  streakTeaser,
+  survivalStreak,
   timesPicked,
   type Quote,
   type Role,
   type RoundNo,
   type Session,
 } from '@/domain';
-import { feedback } from '@/feedback';
+import { feedback, type CountStep } from '@/feedback';
 import { useFaceDown } from '@/feedback/useFaceDown';
 import { useStore } from '@/state/store';
 import { BlockButton } from '@/ui/BlockButton';
@@ -91,9 +107,7 @@ export default function QuoteFlow() {
         <T variant="pixelXL" style={{ color: colors.warn }}>
           ABGE{'\n'}LEHNT.
         </T>
-        <T variant="bodyStrong">
-          {target.name} kneift. Zählt im Mut-Ranking wie eine 50.
-        </T>
+        <T variant="bodyStrong">{target.name} kneift. Zählt im Mut-Ranking wie eine 50.</T>
         <BlockButton label="OK" onPress={() => router.dismissTo('/')} />
       </Screen>
     );
@@ -128,9 +142,9 @@ export default function QuoteFlow() {
             setCounting(false);
             setRevealedRound(pendingRound);
             setShowReveal(pendingRound);
-            const hit = round.picks.challenger === round.picks.target;
-            if (hit) feedback.hit();
-            else if (round.no === 1) feedback.counter();
+            const verdict = roundVerdict(round);
+            if (verdict === 'hit') feedback.hit();
+            else if (verdict === 'near') feedback.near();
             else feedback.miss();
           }}
         />
@@ -141,10 +155,7 @@ export default function QuoteFlow() {
         challengerName={challenger.name}
         targetName={target.name}
         roundNo={round.no}
-        onGo={() => {
-          feedback.count();
-          setCounting(true);
-        }}
+        onGo={() => setCounting(true)}
       />
     );
   }
@@ -153,10 +164,16 @@ export default function QuoteFlow() {
     if (passedTo !== 'target') {
       return <Pass name={target.name} purpose="range" onConfirm={() => setPassedTo('target')} />;
     }
+    const h = headToHead(session, quote.challengerId, quote.targetId);
+    const history = [
+      rivalryLine(challenger.name, target.name, h.aOverB, h.bOverA),
+      streakTeaser(target.name, survivalStreak(session, target.id, quote.id)),
+    ].filter((line): line is string => line !== null);
     return (
       <RangeStage
         challengerName={challenger.name}
         dare={quote.dare}
+        history={history}
         error={error}
         onSet={(range) => {
           if (act(quoteEvent(quote.id, { type: 'setRange', range }))) feedback.lock();
@@ -228,12 +245,14 @@ function Pass({
 function RangeStage({
   challengerName,
   dare,
+  history,
   error,
   onSet,
   onDecline,
 }: {
   challengerName: string;
   dare: string;
+  history: string[];
   error: string | null;
   onSet: (range: number) => void;
   onDecline: () => void;
@@ -248,6 +267,15 @@ function RangeStage({
           <T variant="label">{challengerName.toUpperCase()} QUOTET DICH</T>
         </View>
         <T variant="title">„{dare}“</T>
+        {history.length > 0 ? (
+          <View style={styles.history} testID="history">
+            {history.map((line) => (
+              <Text key={line} style={styles.historyLine}>
+                {line}
+              </Text>
+            ))}
+          </View>
+        ) : null}
       </View>
       <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
         <T variant="label" style={{ textAlign: 'center' }}>
@@ -370,59 +398,146 @@ function Ready({
 
 const COUNT_STEP_MS = 620;
 
+/** Drei Schläge, jeder stärker: Ziffer springt groß herein, Haptik und Ton steigern sich. */
 function Countdown({ onDone }: { onDone: () => void }) {
   const [n, setN] = useState(3);
   const finish = useEffectEvent(onDone);
+  const reduceMotion = useReducedMotion();
+  const scale = useSharedValue(reduceMotion ? 1 : 1.6);
+
+  const punch = useEffectEvent((step: CountStep) => {
+    feedback.count(step);
+    if (!reduceMotion) {
+      scale.value = 1.5 + step * 0.15;
+      scale.value = withSpring(1, { damping: 11, stiffness: 260, mass: 0.6 });
+    }
+  });
 
   useEffect(() => {
+    punch(1);
     const timers = [
       setTimeout(() => {
         setN(2);
-        feedback.count();
+        punch(2);
       }, COUNT_STEP_MS),
       setTimeout(() => {
         setN(1);
-        feedback.count();
+        punch(3);
       }, COUNT_STEP_MS * 2),
       setTimeout(() => finish(), COUNT_STEP_MS * 3),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   return (
     <Screen style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <Text
+      <Animated.Text
         testID="countdown"
         accessibilityLiveRegion="assertive"
-        style={{ fontFamily: fonts.pixelBold, fontSize: 220, lineHeight: 230, color: colors.signal }}>
+        style={[{ fontFamily: fonts.pixelBold, fontSize: 220, lineHeight: 230, color: colors.signal }, style]}>
         {n}
-      </Text>
+      </Animated.Text>
     </Screen>
   );
 }
 
-/** Ziffern laufen kurz durch wie ein Slot, dann stehen sie. */
-function SlotNumber({ value, max, color }: { value: number; max: number; color: string }) {
-  const [shown, setShown] = useState(() => 1 + Math.floor(Math.random() * max));
-  const [settled, setSettled] = useState(false);
+/** Die Zahl knallt von unten herein, mit kleinem Überschwingen. */
+function SlamNumber({ value, delay, color }: { value: number; delay: number; color: string }) {
+  const reduceMotion = useReducedMotion();
+  const y = useSharedValue(reduceMotion ? 0 : 56);
+  const scale = useSharedValue(reduceMotion ? 1 : 1.35);
+  const opacity = useSharedValue(reduceMotion ? 1 : 0);
+
   useEffect(() => {
-    const spin = setInterval(() => setShown(1 + Math.floor(Math.random() * max)), 45);
-    const stop = setTimeout(() => {
-      clearInterval(spin);
-      setShown(value);
-      setSettled(true);
-    }, 480);
-    return () => {
-      clearInterval(spin);
-      clearTimeout(stop);
-    };
-  }, [value, max]);
+    if (reduceMotion) return;
+    const spring = { damping: 12, stiffness: 320, mass: 0.7 };
+    y.value = withDelay(delay, withSpring(0, spring));
+    scale.value = withDelay(delay, withSpring(1, spring));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 80 }));
+  }, [delay, opacity, reduceMotion, scale, y]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: y.value }, { scale: scale.value }],
+  }));
+
   return (
-    <Text
-      accessibilityLabel={settled ? String(value) : 'läuft'}
-      style={[styles.cardNumber, { color, opacity: settled ? 1 : 0.6 }]}>
-      {shown}
-    </Text>
+    <Animated.Text accessibilityLabel={String(value)} style={[styles.cardNumber, { color }, style]}>
+      {value}
+    </Animated.Text>
+  );
+}
+
+const BURST = Array.from({ length: 16 }, (_, i) => ({
+  angle: (i / 16) * Math.PI * 2 + (i % 2) * 0.2,
+  distance: 110 + (i % 3) * 38,
+  size: 8 + (i % 4) * 4,
+  color: i % 3 === 0 ? colors.text : colors.ink,
+  delay: (i % 4) * 25,
+}));
+
+/** Pixelquadrate fliegen aus der Mitte, 350 ms, dann weg. */
+function PixelBurst() {
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {BURST.map((p, i) => (
+        <Shard key={i} {...p} />
+      ))}
+    </View>
+  );
+}
+
+function Shard({ angle, distance, size, color, delay }: (typeof BURST)[number]) {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.value = withDelay(delay, withTiming(1, { duration: 350, easing: Easing.out(Easing.cubic) }));
+  }, [delay, t]);
+  const style = useAnimatedStyle(() => ({
+    opacity: 1 - t.value,
+    transform: [
+      { translateX: Math.cos(angle) * distance * t.value },
+      { translateY: Math.sin(angle) * distance * t.value },
+    ],
+  }));
+  return (
+    <Animated.View
+      style={[
+        { position: 'absolute', left: '50%', top: '42%', width: size, height: size, backgroundColor: color },
+        style,
+      ]}
+    />
+  );
+}
+
+/** Bei Treffer: kurzer Blitz, kurzes Wackeln, Pixelausbruch. Nichts länger als 400 ms. */
+function HitStage({ children }: { children: ReactNode }) {
+  const reduceMotion = useReducedMotion();
+  const flash = useSharedValue(reduceMotion ? 0 : 1);
+  const shake = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    flash.value = withTiming(0, { duration: 180 });
+    shake.value = withSequence(
+      withTiming(-7, { duration: 40 }),
+      withTiming(7, { duration: 60 }),
+      withTiming(-5, { duration: 60 }),
+      withTiming(3, { duration: 50 }),
+      withTiming(0, { duration: 40 }),
+    );
+  }, [flash, reduceMotion, shake]);
+
+  const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flash.value }));
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Animated.View style={[{ flex: 1 }, shakeStyle]}>{children}</Animated.View>
+      {!reduceMotion ? <PixelBurst /> : null}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.text }, flashStyle]} />
+    </View>
   );
 }
 
@@ -446,7 +561,7 @@ function Reveal({
   const round = quote.rounds[roundNo - 1];
   const c = round.picks.challenger!;
   const t = round.picks.target!;
-  const hit = c === t;
+  const verdict = roundVerdict(round) ?? 'miss';
   const challenger = playerById(session, quote.challengerId);
   const target = playerById(session, quote.targetId);
   const hunter = playerById(session, playerIdFor(quote, hunterOf(roundNo)));
@@ -454,9 +569,12 @@ function Reveal({
   const dare = session.dares.find((d) => d.quoteId === quote.id);
   const seed = `${quote.id}:${roundNo}`;
   const range = quote.range ?? 2;
+  const counter = roundNo === 1 && verdict !== 'hit';
 
-  const line = hit
-    ? revealLine({
+  const lines: string[] = [];
+  if (verdict === 'hit') {
+    lines.push(
+      revealLine({
         kind: 'hit',
         seed,
         loserName: loser.name,
@@ -464,24 +582,33 @@ function Reveal({
         value: c,
         loserTimesPickedValue: timesPicked(session, loser.id, c),
         round: roundNo,
-      })
-    : roundNo === 1
-      ? revealLine({ kind: 'counter', seed, newHunterName: target.name })
-      : revealLine({ kind: 'miss', seed });
+      }),
+    );
+    const broken = streakBrokenLine(loser.name, survivalStreak(session, loser.id, quote.id));
+    if (broken) lines.push(broken);
+  } else if (verdict === 'near') {
+    lines.push(revealLine({ kind: 'near', seed, survivorName: loser.name, a: c, b: t, round: roundNo }));
+    if (counter) lines.push(`Gegenquote. ${target.name} jagt jetzt.`);
+  } else if (counter) {
+    lines.push(revealLine({ kind: 'counter', seed, newHunterName: target.name }));
+  } else {
+    lines.push(revealLine({ kind: 'miss', seed }));
+  }
 
+  const hit = verdict === 'hit';
   const ink = hit ? colors.ink : colors.text;
   const cards = (
     <View style={styles.cards}>
       {[
-        { p: challenger, v: c },
-        { p: target, v: t },
-      ].map(({ p, v }) => (
+        { p: challenger, v: c, delay: 0 },
+        { p: target, v: t, delay: 140 },
+      ].map(({ p, v, delay }) => (
         <View key={p.id} style={[styles.revealCard, !hit && { borderColor: colors.line, borderWidth: layout.border }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <PixelAvatar name={p.name} size={30} />
             <T variant="label">{p.name.toUpperCase()}</T>
           </View>
-          <SlotNumber value={v} max={range} color={colors.text} />
+          <SlamNumber value={v} delay={delay} color={colors.text} />
         </View>
       ))}
     </View>
@@ -489,56 +616,65 @@ function Reveal({
 
   if (hit) {
     return (
-      <Screen background={colors.signal}>
-        <View style={styles.revealHeader}>
-          <Text style={[styles.revealMeta, { color: ink }]}>
-            QUOTE {range} · {roundNo === 1 ? 'RUNDE 1' : 'GEGENQUOTE'}
-          </Text>
-          <Text style={[styles.revealMeta, { color: ink }]}>{formatOneIn(range).toUpperCase()}</Text>
-        </View>
-        <View style={{ flex: 1, justifyContent: 'center', gap: 24 }}>
-          <Text testID="reveal-title" style={[styles.revealTitle, { color: ink }]}>
-            TREF{'\n'}FER.
-          </Text>
-          {cards}
-          <View style={[styles.dareBox, { borderColor: ink }]}>
-            <Text style={[styles.revealMeta, { color: ink }]}>{loser.name.toUpperCase()} MUSS</Text>
-            <Text style={[styles.revealDare, { color: ink }]}>{quote.dare}</Text>
-            <Text style={[styles.revealLine, { color: ink }]}>{line}</Text>
+      <HitStage>
+        <Screen background={colors.signal}>
+          <View style={styles.revealHeader}>
+            <Text style={[styles.revealMeta, { color: ink }]}>
+              QUOTE {range} · {roundNo === 1 ? 'RUNDE 1' : 'GEGENQUOTE'}
+            </Text>
+            <Text style={[styles.revealMeta, { color: ink }]}>{formatOneIn(range).toUpperCase()}</Text>
           </View>
-        </View>
-        <View style={{ gap: 10 }}>
-          <BlockButton testID="receipt-button" label="BELEG DRUCKEN" variant="dark" onPress={onReceipt} />
-          {dare && dare.status === 'open' ? (
-            <BlockButton
-              label="Veto · kostet Ehre"
-              variant="ghost"
-              size="md"
-              ghostColor={colors.ink}
-              onPress={() => onVeto(dare.id)}
-            />
-          ) : null}
-        </View>
-      </Screen>
+          <View style={{ flex: 1, justifyContent: 'center', gap: 24 }}>
+            <Text testID="reveal-title" style={[styles.revealTitle, { color: ink }]}>
+              TREF{'\n'}FER.
+            </Text>
+            {cards}
+            <View style={[styles.dareBox, { borderColor: ink }]}>
+              <Text style={[styles.revealMeta, { color: ink }]}>{loser.name.toUpperCase()} MUSS</Text>
+              <Text style={[styles.revealDare, { color: ink }]}>{quote.dare}</Text>
+              {lines.map((line) => (
+                <Text key={line} style={[styles.revealLine, { color: ink }]}>
+                  {line}
+                </Text>
+              ))}
+            </View>
+          </View>
+          <View style={{ gap: 10 }}>
+            <BlockButton testID="receipt-button" label="BELEG DRUCKEN" variant="dark" onPress={onReceipt} />
+            {dare && dare.status === 'open' ? (
+              <BlockButton
+                label="Veto · kostet Ehre"
+                variant="ghost"
+                size="md"
+                ghostColor={colors.ink}
+                onPress={() => onVeto(dare.id)}
+              />
+            ) : null}
+          </View>
+        </Screen>
+      </HitStage>
     );
   }
 
-  const counter = roundNo === 1;
+  const title = verdict === 'near' ? 'KNAPP.' : counter ? 'DANE\nBEN.' : 'NIEMAND\nMUSS.';
+  const titleColor = verdict === 'near' ? colors.warn : counter ? colors.text : colors.text2;
   return (
     <Screen>
       <View style={styles.revealHeader}>
         <T variant="label">
-          QUOTE {range} · {counter ? 'RUNDE 1' : 'GEGENQUOTE'}
+          QUOTE {range} · {roundNo === 1 ? 'RUNDE 1' : 'GEGENQUOTE'}
         </T>
       </View>
       <View style={{ flex: 1, justifyContent: 'center', gap: 24 }}>
-        <Text testID="reveal-title" style={[styles.revealTitle, { color: counter ? colors.text : colors.text2 }]}>
-          {counter ? 'DANE\nBEN.' : 'NIEMAND\nMUSS.'}
+        <Text testID="reveal-title" style={[styles.revealTitle, { color: titleColor }]}>
+          {title}
         </Text>
         {cards}
-        <T variant="bodyStrong" style={{ color: counter ? colors.signal : colors.text2 }}>
-          {line}
-        </T>
+        {lines.map((line, i) => (
+          <T key={line} variant="bodyStrong" style={{ color: i === 0 && counter ? colors.signal : colors.text2 }}>
+            {line}
+          </T>
+        ))}
       </View>
       {counter ? (
         <BlockButton testID="counter-button" label="GEGENQUOTE" onPress={onCounter} />
@@ -553,6 +689,8 @@ function Reveal({
 }
 
 const styles = StyleSheet.create({
+  history: { borderLeftWidth: 3, borderColor: colors.warn, paddingLeft: 10, gap: 2 },
+  historyLine: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.text2 },
   riskRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -578,7 +716,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-  revealCard: { flex: 1, backgroundColor: colors.ink, padding: 16, gap: 10 },
+  revealCard: { flex: 1, backgroundColor: colors.ink, padding: 16, gap: 10, overflow: 'hidden' },
   cardNumber: { fontFamily: fonts.pixelBold, fontSize: 80, lineHeight: 86, color: colors.text },
   revealHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   revealMeta: { fontFamily: fonts.pixel, fontSize: 12, letterSpacing: 1 },
