@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { initSounds } from '@/feedback';
+import { AccountProvider } from '@/state/account';
 import { StoreProvider, useStore } from '@/state/store';
 import { colors } from '@/ui/theme';
 
@@ -31,7 +32,9 @@ export default function RootLayout() {
 
   return (
     <StoreProvider>
-      <Gate fontsReady={fontsLoaded || !!fontError} />
+      <AccountProvider>
+        <Gate fontsReady={fontsLoaded || !!fontError} />
+      </AccountProvider>
     </StoreProvider>
   );
 }

@@ -1,9 +1,10 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { MAX_PLAYER_NAME, MAX_PLAYERS } from '@/domain';
+import { MAX_PLAYER_NAME, MAX_PLAYERS, uniquePlayerName } from '@/domain';
 import { feedback } from '@/feedback';
+import { useAccount } from '@/state/account';
 import { useStore } from '@/state/store';
 import { BlockButton } from '@/ui/BlockButton';
 import { PixelAvatar } from '@/ui/PixelAvatar';
@@ -11,23 +12,58 @@ import { Screen } from '@/ui/Screen';
 import { T } from '@/ui/Text';
 import { colors, fonts, layout } from '@/ui/theme';
 
+interface Entry {
+  name: string;
+  profileId?: string;
+}
+
 function defaultEventName() {
   const d = new Date();
   return `Abend ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.`;
 }
 
 export default function Setup() {
+  const params = useLocalSearchParams<{ crew?: string }>();
   const { startEvent } = useStore();
+  const account = useAccount();
+  const crew = params.crew ? account.crews.find((c) => c.id === params.crew) : undefined;
+
   const [name, setName] = useState(defaultEventName);
-  const [players, setPlayers] = useState<string[]>([]);
+  const [players, setPlayers] = useState<Entry[]>([]);
   const [draft, setDraft] = useState('');
   const [me, setMe] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [loadingCrew, setLoadingCrew] = useState(!!params.crew);
+
+  // Aus einer Gruppe: alle Mitglieder vorauswählen, wer nicht da ist, wird rausgetippt.
+  const { members, userId } = account;
+  useEffect(() => {
+    if (!params.crew) return;
+    let active = true;
+    members(params.crew).then((res) => {
+      if (!active) return;
+      setLoadingCrew(false);
+      if (!res.ok) {
+        setError(`${res.error} Du kannst trotzdem mit Namen spielen.`);
+        return;
+      }
+      const entries: Entry[] = [];
+      for (const m of res.value) {
+        entries.push({ name: uniquePlayerName(entries.map((e) => e.name), m.handle), profileId: m.userId });
+      }
+      setPlayers(entries);
+      const mine = entries.findIndex((e) => e.profileId === userId);
+      setMe(mine >= 0 ? mine : 0);
+    });
+    return () => {
+      active = false;
+    };
+  }, [params.crew, members, userId]);
 
   const add = () => {
     const n = draft.trim();
     if (!n) return;
-    if (players.some((p) => p.toLowerCase() === n.toLowerCase())) {
+    if (players.some((p) => p.name.toLowerCase() === n.toLowerCase())) {
       feedback.error();
       setError(`${n} ist schon dabei.`);
       return;
@@ -38,7 +74,7 @@ export default function Setup() {
       return;
     }
     feedback.tick();
-    setPlayers([...players, n]);
+    setPlayers([...players, { name: n }]);
     setDraft('');
     setError(null);
   };
@@ -49,7 +85,12 @@ export default function Setup() {
   };
 
   const go = () => {
-    const res = startEvent({ name, players, meIndex: me });
+    const res = startEvent({
+      name,
+      players,
+      meIndex: me,
+      crew: crew ? { id: crew.id, name: crew.name } : undefined,
+    });
     if (!res.ok) {
       feedback.error();
       setError(res.error);
@@ -61,7 +102,7 @@ export default function Setup() {
 
   return (
     <Screen scroll>
-      <T variant="label">NEUES EVENT</T>
+      <T variant="label">{crew ? `NEUES EVENT · ${crew.name.toUpperCase()}` : 'NEUES EVENT'}</T>
       <View style={{ gap: 8 }}>
         <T variant="label">NAME</T>
         <TextInput
@@ -78,20 +119,22 @@ export default function Setup() {
 
       <View style={{ gap: 8 }}>
         <T variant="label">WER SPIELT · TIPP AUF DICH SELBST = ICH</T>
+        {loadingCrew ? <T variant="label">LADE GRUPPE …</T> : null}
         {players.map((p, i) => (
-          <View key={p} style={styles.playerRow}>
+          <View key={`${p.profileId ?? 'gast'}-${p.name}`} style={styles.playerRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`${p}${i === me ? ', das bin ich' : ', als ich markieren'}`}
+              accessibilityLabel={`${p.name}${i === me ? ', das bin ich' : ', als ich markieren'}`}
               onPress={() => setMe(i)}
               style={styles.playerMain}>
-              <PixelAvatar name={p} size={30} />
-              <Text style={styles.playerName}>{p}</Text>
+              <PixelAvatar name={p.name} size={30} />
+              <Text style={styles.playerName}>{p.name}</Text>
               {i === me ? <Text style={styles.meTag}>ICH</Text> : null}
+              {!p.profileId && crew ? <Text style={styles.guestTag}>GAST</Text> : null}
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`${p} entfernen`}
+              accessibilityLabel={`${p.name} entfernen`}
               onPress={() => remove(i)}
               hitSlop={8}
               style={styles.remove}>
@@ -109,7 +152,7 @@ export default function Setup() {
             submitBehavior="submit"
             returnKeyType="done"
             maxLength={MAX_PLAYER_NAME}
-            placeholder={players.length === 0 ? 'Dein Name' : 'Nächste Person'}
+            placeholder={players.length === 0 ? 'Dein Name' : crew ? 'Gast hinzufügen' : 'Nächste Person'}
             placeholderTextColor={colors.text2}
             selectionColor={colors.signal}
             style={[styles.input, { flex: 1 }]}
@@ -158,6 +201,7 @@ const styles = StyleSheet.create({
   playerMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, minHeight: 52 },
   playerName: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.text },
   meTag: { fontFamily: fonts.pixelBold, fontSize: 11, color: colors.ink, backgroundColor: colors.signal, paddingHorizontal: 6, paddingVertical: 2 },
+  guestTag: { fontFamily: fonts.pixelBold, fontSize: 10, color: colors.text2, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 6, paddingVertical: 2 },
   remove: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   removeLabel: { fontFamily: fonts.pixelBold, fontSize: 22, color: colors.text2 },
   addRow: { flexDirection: 'row', gap: 10 },

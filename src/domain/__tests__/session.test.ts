@@ -149,3 +149,40 @@ describe('Event beenden', () => {
     expect(settled.dares[0].status).toBe('done');
   });
 });
+
+describe('uniquePlayerName', () => {
+  it('lässt freie Namen unverändert und hängt bei Gleichstand eine Zahl an', async () => {
+    const { uniquePlayerName } = await import('../session');
+    expect(uniquePlayerName(['Max'], 'Tom')).toBe('Tom');
+    expect(uniquePlayerName(['Max'], 'max')).toBe('max 2');
+    expect(uniquePlayerName(['Max', 'Max 2'], 'Max')).toBe('Max 3');
+  });
+
+  it('hält die Höchstlänge und ersetzt leere Namen', async () => {
+    const { uniquePlayerName, MAX_PLAYER_NAME } = await import('../session');
+    const long = 'Maximilianus';
+    const result = uniquePlayerName([long], long);
+    expect(result.length).toBeLessThanOrEqual(MAX_PLAYER_NAME);
+    expect(result.endsWith(' 2')).toBe(true);
+    expect(uniquePlayerName([], '   ')).toBe('Gast');
+  });
+});
+
+describe('Events aus einer Gruppe', () => {
+  it('merkt sich Gruppe und Konten, verhindert dasselbe Konto doppelt', () => {
+    let s = createSession({ id: 's', name: 'Abend', startedAt: 0, crew: { id: 'c1', name: 'Schniadlerboys' } });
+    expect(s).toMatchObject({ crewId: 'c1', crewName: 'Schniadlerboys' });
+    s = addPlayer(s, { id: 'p1', name: 'Fuchs', profileId: 'u1' });
+    s = addPlayer(s, { id: 'p2', name: 'Gast' });
+    expect(s.players).toEqual([
+      { id: 'p1', name: 'Fuchs', profileId: 'u1' },
+      { id: 'p2', name: 'Gast' },
+    ]);
+    expect(code(() => addPlayer(s, { id: 'p3', name: 'Fuchs 2', profileId: 'u1' }))).toBe('duplicateName');
+  });
+
+  it('bleibt ohne Gruppe beim alten Format', () => {
+    const s = createSession({ id: 's', name: 'Abend', startedAt: 0 });
+    expect('crewId' in s).toBe(false);
+  });
+});

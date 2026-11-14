@@ -99,6 +99,8 @@ export default function Start() {
           ))}
         </View>
       </View>
+
+      <BlockButton testID="open-crews" label="Gruppen" variant="ghost" size="md" onPress={() => router.push('/crews')} />
     </Screen>
   );
 }
@@ -126,6 +128,7 @@ function Welcome({ hasArchive }: { hasArchive: boolean }) {
       </View>
       <View style={{ gap: 12 }}>
         <BlockButton testID="start-event" label="EVENT STARTEN" onPress={() => router.push('/setup')} />
+        <BlockButton testID="open-crews" label="Gruppen" variant="ghost" size="md" onPress={() => router.push('/crews')} />
         {hasArchive ? (
           <BlockButton
             label="Letztes Event ansehen"
