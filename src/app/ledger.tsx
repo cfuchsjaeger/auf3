@@ -5,13 +5,19 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import {
   computeStats,
   formatDecimal,
+  headToHead,
   leaderboard,
   MAX_RANGE,
   MIN_RANGE,
   mutRoast,
   playerById,
+  TITLE_HINT,
+  TITLE_LABEL,
+  titlesFor,
+  titlesOf,
   type Board,
   type PlayerStats,
+  type Title,
 } from '@/domain';
 import { feedback } from '@/feedback';
 import { useStore } from '@/state/store';
@@ -57,6 +63,14 @@ export default function Ledger() {
 
   const stats = computeStats(session);
   const rows = leaderboard(session, board, stats);
+  const titles = titlesFor(session, stats);
+  const awarded = (Object.keys(TITLE_LABEL) as Title[]).filter((t) => titles[t]);
+  const duels = session.players
+    .flatMap((a, i) =>
+      session.players.slice(i + 1).map((b) => ({ a, b, ...headToHead(session, a.id, b.id) })),
+    )
+    .filter((d) => d.duels > 0)
+    .sort((x, y) => y.duels - x.duels);
   const hits = session.quotes.filter((q) => q.outcome?.kind === 'hit').length;
   const vetos = session.dares.filter((d) => d.status === 'vetoed').length;
   const open = session.dares.filter((d) => d.status === 'open');
@@ -75,6 +89,22 @@ export default function Ledger() {
           {session.quotes.length} Quoten · {hits} Treffer · {vetos} Veto
         </T>
       </View>
+
+      {awarded.length > 0 ? (
+        <View style={styles.titleRow} testID="titles">
+          {awarded.map((t) => (
+            <View key={t} style={styles.titleCard} accessible accessibilityLabel={`${TITLE_LABEL[t]}: ${playerById(session, titles[t]!).name}. ${TITLE_HINT[t]}`}>
+              <PixelAvatar name={playerById(session, titles[t]!).name} size={28} />
+              <View style={{ gap: 2, flexShrink: 1 }}>
+                <Text style={styles.titleLabel}>{TITLE_LABEL[t]}</Text>
+                <Text style={styles.titleName} numberOfLines={1}>
+                  {playerById(session, titles[t]!).name}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.tabs} accessibilityRole="tablist">
         {TABS.map((t, i) => {
@@ -108,7 +138,14 @@ export default function Ledger() {
               <PixelAvatar name={player.name} size={36} />
               <View style={{ flex: 1, gap: 6 }}>
                 <View style={styles.rowTop}>
-                  <Text style={styles.name}>{player.name}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+                    <Text style={styles.name}>{player.name}</Text>
+                    {titlesOf(titles, player.id).map((t) => (
+                      <Text key={t} style={styles.badge}>
+                        {TITLE_LABEL[t]}
+                      </Text>
+                    ))}
+                  </View>
                   <Text style={[styles.value, lead && { color: colors.signal }]}>{display(board, row.value)}</Text>
                 </View>
                 <View style={styles.barTrack}>
@@ -128,6 +165,24 @@ export default function Ledger() {
           {hint}
         </T>
       </View>
+
+      {duels.length > 0 ? (
+        <View style={styles.box} testID="duels">
+          <T variant="label">DUELLE</T>
+          {duels.map((d) => (
+            <View key={`${d.a.id}-${d.b.id}`} style={styles.duel}>
+              <Text style={[styles.duelName, d.aOverB > d.bOverA && styles.duelLead]}>{d.a.name}</Text>
+              <Text style={styles.duelScore}>
+                {d.aOverB} : {d.bOverA}
+              </Text>
+              <Text style={[styles.duelName, styles.duelRight, d.bOverA > d.aOverB && styles.duelLead]}>{d.b.name}</Text>
+            </View>
+          ))}
+          <T variant="body" style={{ color: colors.text2, fontSize: 13 }}>
+            Wer wen wie oft erwischt hat.
+          </T>
+        </View>
+      ) : null}
 
       <View style={styles.box}>
         <T variant="label">SCHULDENSTAND</T>
@@ -176,6 +231,16 @@ export default function Ledger() {
       </View>
 
       <View style={{ gap: 10 }}>
+        {session.quotes.some((q) => q.status === 'resolved' || q.status === 'declined') ? (
+          <BlockButton
+            testID="open-chronik"
+            label="Chronik des Abends"
+            variant="ghost"
+            size="md"
+            ghostColor={colors.text}
+            onPress={() => router.push(archived ? { pathname: '/chronik', params: { archive: params.archive } } : '/chronik')}
+          />
+        ) : null}
         {!archived ? (
           confirmEnd ? (
             <BlockButton
@@ -233,6 +298,34 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: colors.text },
   tabLabel: { fontFamily: fonts.pixel, fontSize: 12, letterSpacing: 1, color: colors.text },
   tabLabelActive: { fontFamily: fonts.pixelBold, color: colors.ink },
+  titleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  titleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: layout.border,
+    borderColor: colors.signal,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    width: '48%',
+    flexGrow: 1,
+  },
+  titleLabel: { fontFamily: fonts.pixelBold, fontSize: 10, color: colors.signal, letterSpacing: 1 },
+  titleName: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.text },
+  badge: {
+    fontFamily: fonts.pixelBold,
+    fontSize: 9,
+    color: colors.ink,
+    backgroundColor: colors.signal,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    letterSpacing: 0.5,
+  },
+  duel: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  duelName: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 15, color: colors.text2 },
+  duelRight: { textAlign: 'right' },
+  duelLead: { color: colors.text },
+  duelScore: { fontFamily: fonts.pixelBold, fontSize: 18, color: colors.signal, letterSpacing: 1, minWidth: 64, textAlign: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

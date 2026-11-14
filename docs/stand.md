@@ -15,6 +15,8 @@ Zuletzt aktualisiert: 14.11.2026, nach dem ersten Build aufs iPhone. Diese Datei
 
 ## Was fertig ist
 
+- **Bar-Modus 2:** Knapp-Moment, Vorgeschichte auf dem Range-Screen (Rivalität, Serie), Titel Feigling, Hellseher, Ehrenmann, Lebensmüde, Duell-Tabelle, Chronik als teilbarer Bon, vier weiche Töne, Haptik als Crescendo, Reveal mit Blitz, Wackeln und Pixelsplittern.
+
 - **Bar-Modus:** ein Handy, offline, Weitergeben, geheimes Tippen, Countdown, Reveal, Gegenquote, Veto, Beleg, Abrechnung mit Mut, Lesen, Ehre.
 - **Gruppen:** anonymes Konto mit Namen, gründen, per WhatsApp, Nachricht oder Teilen-Menü einladen, per `auf3://join?code=…` oder Code beitreten, mehrere Gruppen, verlassen, Event aus Gruppe starten.
 - **Server-Schema für den Live-Modus:** Quoten, Runden, geheime Picks per Row Level Security, Schulden. In der App noch nicht angebunden.
@@ -41,14 +43,14 @@ Zuletzt aktualisiert: 14.11.2026, nach dem ersten Build aufs iPhone. Diese Datei
 - **Expo Go im App Store endet bei SDK 54.** Die App nutzt SDK 58 und braucht einen eigenen Build.
 - **Supabase gibt neuen Funktionen Rechte für `anon`.** Jede Migration entzieht sie ausdrücklich, `crews.test.sql` prüft das.
 - **Typen-Erzeugung:** Eine direkte Umleitung hat die Typdatei bei laufendem Fehler überschrieben. `npm run db:types` schreibt jetzt nur bei Erfolg.
-- **Cloud-Sitzung:** Docker läuft nach einem Neustart nicht automatisch, vor `npm run db:start` erst `dockerd` starten. WebFetch nutzt den Proxy der Sitzung nicht, Expo-Doku per `curl` lesen.
+- **Cloud-Sitzung:** Docker läuft nach einem Neustart nicht automatisch und wird zwischendurch beendet. Schlägt `test:e2e:gruppen` mit „Keine Verbindung“ fehl, erst `dockerd` starten, dann `npm run db:start`. WebFetch nutzt den Proxy der Sitzung nicht, Expo-Doku per `curl` lesen.
 
 ## Offene Punkte
 
 1. **Erster Build läuft auf dem iPhone** seit 14.11.2026, als Release mit kostenlosem Apple-Konto. Läuft 7 Tage, dann mit `npm run ios:lokal` neu installieren.
 2. **Am Gerät prüfen:** Haptik, Umdreh-Erkennung, Ton mit Stummschalter, Darstellung der WhatsApp-Einladung. Die Umdreh-Erkennung beruht auf dem Vorzeichen der Z-Achse laut Quellcode von expo-sensors und ist nie auf einem Gerät gelaufen.
 3. **Prüfen, ob „Allow anonymous sign-ins“ im Supabase-Projekt aktiv ist.** Ohne das scheitert der Name in den Gruppen mit einem erklärenden Fehler.
-4. **Bar-Modus 2:** Plan in `docs/plan-bar-modus.md`. Phase A (Ton, Haptik, Reveal, Knapp, weißer Rand) ist freigegeben, noch nicht gebaut. Phase B (Laut-Modus, Revanche, letzte Aufgaben) ist gestrichen, Grund nicht genannt. Vorschläge für mehr Sog in `docs/plan-sog.md`, ohne Freigabe.
+4. **Bar-Modus 2 gebaut, Branch `feature/bar-modus-2`, Pull Request offen.** Phase A (Theme, Gesten, vier Töne, Haptik-Crescendo, Reveal-Animationen, Knapp) plus Rivalität, Serien, Titel, Chronik. Am iPhone noch nicht geprüft: Haptik-Crescendo, Lautstärke der neuen Töne, Wucht der Animationen. Phase B gestrichen, Topf und Tipprunde offen.
 5. **Geparkt: Gruppen statt Events.** Wunsch ist eine Gruppe wie ein WhatsApp-Chat, in dem man sich ständig quotet, Events erst später. Offen: Wie kommen Freunde ohne Mac an die App, Mitgliedschaft oder Web-Version? Bleibt der Bar-Modus mit einem Handy als Option in der Gruppe?
 6. **Entscheidung offen:** Ergebnisse zwischen Handys teilen, also gemeinsames Schuldenbuch und Ranglisten pro Gruppe. Bisher bleiben Ergebnisse auf dem Handy, auf dem gespielt wurde.
 7. **Live-Modus mit zwei Handys** in der App anbinden. Das Server-Schema ist fertig.

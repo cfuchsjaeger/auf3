@@ -27,7 +27,7 @@ Quotenspiel-App für Freunde (iOS und Android, Expo SDK 58). Oberfläche und Kom
 
 ## Design
 
-Tokens in `src/ui/theme.ts`. Scharfe Ecken, harte Blockschatten, genau drei Farben: Grund, Signalgrün, Warnorange. Gimmicks erst nach dem Tippen der Zahl, davor schnell und nüchtern. Haptik ist der Primärkanal, Sound nur Zugabe.
+Tokens in `src/ui/theme.ts`. Scharfe Ecken, harte Blockschatten, genau drei Farben: Grund, Signalgrün, Warnorange. Gimmicks erst nach dem Tippen der Zahl, davor schnell und nüchtern. Haptik ist der Primärkanal. Ton gibt es nur für vier Momente: Countdown, Treffer, Knapp, Daneben. Tasten und Regler bleiben stumm. Animationen über Reanimated, nichts länger als 400 ms außer Countdown und Beleg, `useReducedMotion` beachten.
 
 ## Generierte Dateien
 

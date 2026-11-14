@@ -1,6 +1,6 @@
 # Bar-Modus 2: Plan
 
-Entwurf vom 14.11.2026, noch nicht freigegeben. Ziel: mehr Spaß pro Minute, nicht mehr Funktionen.
+Stand 14.11.2026: Phase A ist gebaut (Branch `feature/bar-modus-2`), dazu Rivalität, Serien, Titel und Chronik aus `docs/plan-sog.md`. Phase B ist gestrichen. Phase C offen. Ziel: mehr Spaß pro Minute, nicht mehr Funktionen.
 
 ## Diagnose
 
@@ -44,7 +44,7 @@ Keine neuen Funktionen, nur besser.
    - Nichts dauert länger als 400 ms, außer Countdown und Beleg.
 6. **Knapp-Moment.** Liegen die Zahlen eins auseinander, heißt es „KNAPP.“ statt „DANEBEN.“, mit eigenem Satz, etwa „6 gegen 7. Das war eng, Tom.“ Ein Beinahe-Treffer ist emotional fast so stark wie ein Treffer und macht den häufigsten Moment spannend.
 
-### Phase B: Tempo, der größte Hebel
+### Phase B: Tempo, der größte Hebel (gestrichen am 14.11.2026)
 
 7. **Laut-Modus als Standard.** Die App spielt euer Ritual mit, statt es zu ersetzen:
    - Quote stellen, Range setzen, „AUF 3“.
@@ -93,8 +93,15 @@ Jede Quote speichert schon Start- und Endzeit. Vorher und nachher vergleichen:
 
 Phase A und B auf einem Branch, je ein Commit pro Maßnahme, danach Pull Request. Phase C nur, wenn A und B am Tisch gut ankommen.
 
-## Offene Entscheidungen
+## Umsetzung von Phase A
 
-1. Standard-Modus: Laut, Geheim oder Auswahl bei jeder Quote? Empfehlung: Laut als Standard, Geheim per Schalter.
-2. Ton: Höhepunkte an oder standardmäßig ganz aus? Empfehlung: Höhepunkte an.
-3. Phasen A und B freigeben?
+- Navigation mit dunklem Theme, kein Zurückwischen in Quote und Beleg.
+- Vier Töne aus Dreieck- und Sinuswellen (`scripts/gen-sounds.mjs`): Countdown steigend A4, Cis5, E5, Treffer als Dur-Akkord, Knapp als zwei fallende Töne, Daneben tief und weich. Spitzenpegel 0,10 bis 0,17 statt 0,35. Tasten, Regler, Sperren, Druck und Gegenquote sind stumm.
+- Haptik: Countdown leicht, mittel, schwer. Knapp zwei leichte Impulse, Daneben ein weicher.
+- Reveal mit Reanimated: Countdown-Ziffer springt herein, Zahlen knallen nacheinander mit Überschwingen, bei Treffer Blitz, Wackeln und 16 Pixelsplitter. Reduzierte Bewegung des Systems wird respektiert.
+- Knapp bei einer Zahl Abstand, mit eigenen Sätzen.
+
+## Offene Punkte
+
+- Das Tempo-Problem aus der Diagnose bleibt ohne Phase B bestehen.
+- Phase C wartet auf Rückmeldung vom Tisch.

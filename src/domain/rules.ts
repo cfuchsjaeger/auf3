@@ -200,3 +200,17 @@ export function creditorOf(quote: Quote): string | null {
 export function playerIdFor(quote: Quote, role: Role): string {
   return role === 'challenger' ? quote.challengerId : quote.targetId;
 }
+
+/** Knapp daneben: eine Zahl Abstand. Kein Regelbegriff, nur für Dramaturgie und Statistik. */
+export function isNearMiss(a: number, b: number): boolean {
+  return Math.abs(a - b) === 1;
+}
+
+export type RoundVerdict = 'hit' | 'near' | 'miss';
+
+export function roundVerdict(round: Round): RoundVerdict | null {
+  const { challenger, target } = round.picks;
+  if (challenger === undefined || target === undefined) return null;
+  if (challenger === target) return 'hit';
+  return isNearMiss(challenger, target) ? 'near' : 'miss';
+}

@@ -29,6 +29,7 @@ export type RevealContext =
       round: 1 | 2;
     }
   | { kind: 'counter'; seed: string; newHunterName: string }
+  | { kind: 'near'; seed: string; survivorName: string; a: number; b: number; round: 1 | 2 }
   | { kind: 'miss'; seed: string };
 
 const HIT_LINES = [
@@ -50,6 +51,12 @@ const COUNTER_LINES = [
   (n: string) => `Daneben. Jetzt darf ${n}.`,
 ] as const;
 
+const NEAR_LINES = [
+  (c: { survivorName: string; a: number; b: number }) => `${c.a} gegen ${c.b}. Das war eng, ${c.survivorName}.`,
+  (c: { survivorName: string }) => `Eine Zahl. Eine einzige, ${c.survivorName}.`,
+  (c: { a: number; b: number }) => `${c.a} und ${c.b}. Atmen, alle.`,
+] as const;
+
 const MISS_LINES = ['Niemand muss. Langweilig, aber fair.', 'Zweimal daneben. Glück gehabt.', 'Nix. Nächste Quote.'] as const;
 
 export function revealLine(ctx: RevealContext): string {
@@ -61,6 +68,8 @@ export function revealLine(ctx: RevealContext): string {
       return ctx.round === 1 ? pick(HIT_LINES, ctx.seed)(ctx) : pick(COUNTER_HIT_LINES, ctx.seed)(ctx);
     case 'counter':
       return pick(COUNTER_LINES, ctx.seed)(ctx.newHunterName);
+    case 'near':
+      return pick(NEAR_LINES, ctx.seed)(ctx);
     case 'miss':
       return pick(MISS_LINES, ctx.seed);
   }
@@ -75,4 +84,22 @@ export function mutRoast(lastName: string | null, seed: string): string {
     `${lastName} spielt auf Sicherheit. Langweilig.`,
   ];
   return `Mut = Durchschnitt deiner Quoten als Target. Niedriger ist mutiger. ${pick(lines, seed)}`;
+}
+
+/** Satz, wenn eine Serie reißt. Ab drei überstandenen Quoten erwähnenswert. */
+export function streakBrokenLine(loserName: string, streak: number): string | null {
+  if (streak < 3) return null;
+  return `${loserName}s Serie von ${streak} reißt.`;
+}
+
+/** Reizpunkt auf dem Range-Screen: aktuelle Serie des Targets. */
+export function streakTeaser(name: string, streak: number): string | null {
+  if (streak < 3) return null;
+  return `${name} hat ${streak} Quoten in Folge überstanden.`;
+}
+
+/** Rivalität in einem Satz, aus Sicht des Challengers gegen das Target. */
+export function rivalryLine(challengerName: string, targetName: string, challengerWins: number, targetWins: number): string | null {
+  if (challengerWins + targetWins === 0) return null;
+  return `${challengerName} gegen ${targetName}: ${challengerWins} zu ${targetWins}.`;
 }

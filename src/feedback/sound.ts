@@ -1,18 +1,16 @@
 /**
- * Kurze Chiptune-Sounds (erzeugt von scripts/gen-sounds.mjs). Der Stummschalter gewinnt immer:
- * playsInSilentMode ist aus. Nichts im Spiel hängt von Sound ab.
+ * Vier Töne, nur für Höhepunkte: Countdown, Treffer, Knapp, Daneben.
+ * Erzeugt von scripts/gen-sounds.mjs. Der Stummschalter gewinnt immer, nichts im Spiel hängt von Ton ab.
  */
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 
 const SOURCES = {
-  key: require('../../assets/sounds/key.wav'),
-  tick: require('../../assets/sounds/tick.wav'),
-  lock: require('../../assets/sounds/lock.wav'),
-  count: require('../../assets/sounds/count.wav'),
+  count1: require('../../assets/sounds/count1.wav'),
+  count2: require('../../assets/sounds/count2.wav'),
+  count3: require('../../assets/sounds/count3.wav'),
   hit: require('../../assets/sounds/hit.wav'),
+  near: require('../../assets/sounds/near.wav'),
   miss: require('../../assets/sounds/miss.wav'),
-  counter: require('../../assets/sounds/counter.wav'),
-  print: require('../../assets/sounds/print.wav'),
 } as const;
 
 export type SoundName = keyof typeof SOURCES;
@@ -37,7 +35,7 @@ export async function initSounds() {
     try {
       players[name] = createAudioPlayer(SOURCES[name]);
     } catch {
-      // Ohne Player bleibt der Sound stumm, das Spiel läuft weiter.
+      // Ohne Player bleibt der Ton stumm, das Spiel läuft weiter.
     }
   }
 }
@@ -50,6 +48,6 @@ export function play(name: SoundName) {
     player.seekTo(0).catch(() => {});
     player.play();
   } catch {
-    // Sound ist Zugabe, nie Voraussetzung.
+    // Ton ist Zugabe, nie Voraussetzung.
   }
 }

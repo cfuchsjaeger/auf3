@@ -1,6 +1,7 @@
 /**
- * Haptik-Vokabular aus fünf Mustern plus Taste und Fehler. Haptik ist der Primärkanal,
- * weil Sound in der Bar untergeht. Auf Web ein No-op.
+ * Haptik ist der Primärkanal, weil Ton in der Bar untergeht.
+ * Tasten und Regler bleiben leicht, der Countdown steigert sich, Treffer und Knapp sind unterscheidbar.
+ * Auf Web ein No-op.
  */
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
@@ -17,18 +18,20 @@ function run(pattern: () => Promise<void>) {
   pattern().catch(() => {});
 }
 
+const android = Platform.OS === 'android';
+
+export type CountStep = 1 | 2 | 3;
+
 export const haptic = {
   key: () =>
     run(() =>
-      Platform.OS === 'android'
+      android
         ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Keyboard_Tap)
         : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
     ),
   tick: () =>
     run(() =>
-      Platform.OS === 'android'
-        ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Segment_Tick)
-        : Haptics.selectionAsync(),
+      android ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Segment_Tick) : Haptics.selectionAsync(),
     ),
   lock: () =>
     run(async () => {
@@ -36,14 +39,32 @@ export const haptic = {
       await wait(70);
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
     }),
-  count: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid)),
+  /** Crescendo: leicht, mittel, schwer. */
+  count: (step: CountStep) =>
+    run(() =>
+      Haptics.impactAsync(
+        step === 1
+          ? Haptics.ImpactFeedbackStyle.Light
+          : step === 2
+            ? Haptics.ImpactFeedbackStyle.Medium
+            : Haptics.ImpactFeedbackStyle.Heavy,
+      ),
+    ),
   hit: () =>
     run(async () => {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       await wait(90);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }),
-  miss: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)),
+  /** Knapp: zwei kurze, leichte Impulse. */
+  near: () =>
+    run(async () => {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await wait(110);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }),
+  /** Daneben: ein weicher Impuls. */
+  miss: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft)),
   error: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)),
   print: () =>
     run(async () => {
