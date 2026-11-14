@@ -28,33 +28,44 @@ brew install cocoapods
 
 ## Bauen und installieren
 
-```bash
-git clone https://github.com/cfuchsjaeger/auf3
-```
+Neuesten Stand holen. Das erste `git checkout` setzt eine Änderung zurück, die frühere Builds an der `package.json` gemacht haben:
 
 ```bash
-cd auf3 && npm ci
+cd ~/auf3 && git checkout package.json && git pull && npm ci
 ```
+
+Dann gibt es zwei Wege.
+
+**Zum Mitnehmen in die Bar, Release:** Der Code ist fest eingebaut, die App läuft ohne Mac.
 
 ```bash
 npm run ios:lokal
 ```
 
-Der Befehl fragt nach dem Gerät, wähle dein iPhone. Fragt er nach einem Team, wähle das Personal Team. Der erste Build dauert mehrere Minuten.
+**Zum Entwickeln am Handy, Debug:** Die App holt den Code vom Mac über WLAN. Änderungen erscheinen per Fast Refresh in Sekunden, solange Mac und iPhone im selben Netz sind und das Terminal offen bleibt. Ohne Mac zeigt diese Version nur eine Fehlermeldung, also nicht in die Bar mitnehmen.
+
+```bash
+npm run ios:lokal:dev
+```
+
+Beide Befehle erzeugen das native Projekt jedes Mal neu, damit die Test-Bundle-ID sicher gesetzt ist. Der Build dauert deshalb jedes Mal mehrere Minuten. Bei der Debug-Variante braucht ihr ihn aber nur einmal, danach reicht Fast Refresh. Beide Varianten ersetzen sich gegenseitig auf dem Handy.
+
+Der Befehl fragt nach dem Gerät, wähle dein iPhone. Fragt er nach einem Team, wähle das Personal Team.
 
 Startet die App beim ersten Mal mit „Nicht vertrauenswürdiger Entwickler“: Auf dem iPhone unter **Einstellungen, Allgemein, VPN und Geräteverwaltung** dein Entwicklerprofil öffnen und vertrauen.
 
 ## Nach 7 Tagen oder bei neuer Version
 
 ```bash
-cd auf3 && git pull && npm ci && npm run ios:lokal
+cd ~/auf3 && git pull && npm ci && npm run ios:lokal
 ```
 
 ## Wenn etwas schiefgeht
 
 - **„Node.js is outdated“ oder „glob is not a function“:** Node ist zu alt. Version 22.13 oder neuer installieren, neues Terminal öffnen, dann `npm ci` und den Befehl erneut ausführen.
 - **„expected package.json path does not exist“:** Der Befehl läuft nicht im Projektordner. Mit `cd ~/auf3` wechseln und mit `pwd` prüfen.
-- **`git pull` meldet Änderungen an `package.json`:** Der erste Build stellt dort zwei Skripte um. Mit `git checkout package.json` zurücksetzen, dann erneut pullen.
+- **`git pull` meldet Änderungen an `package.json`:** Ältere Builds haben dort zwei Skripte umgestellt. Mit `git checkout package.json` zurücksetzen, dann erneut pullen. Ab diesem Stand passiert das nicht mehr.
+- **Die App heißt „Auf 3“ statt „Auf 3 Test“:** Sie wurde mit dem normalen Simulator-Befehl gebaut. `npm run ios:lokal` verwenden, der erzeugt das Projekt mit der Test-ID neu.
 - **„No profiles for 'com.cfuchsjaeger.auf3.lokal' were found“:** In Xcode ist kein Team angemeldet. Schritt 2 der Mac-Vorbereitung prüfen.
 - **„Failed to register bundle identifier“:** Die ID ist bei Apple vergeben. In `app.config.js` die Endung `.lokal` ändern, zum Beispiel auf `.lokal2`.
 - **Alles andere:** Die komplette Fehlermeldung an Claude schicken.
