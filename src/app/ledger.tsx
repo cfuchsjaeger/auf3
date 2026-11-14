@@ -16,6 +16,7 @@ import {
 import { feedback } from '@/feedback';
 import { useStore } from '@/state/store';
 import { BlockButton } from '@/ui/BlockButton';
+import { fitPixelSize } from '@/ui/keypad-logic';
 import { PixelAvatar } from '@/ui/PixelAvatar';
 import { Screen } from '@/ui/Screen';
 import { T } from '@/ui/Text';
@@ -67,7 +68,9 @@ export default function Ledger() {
     <Screen scroll>
       <View style={{ gap: 6 }}>
         <T variant="label">{archived ? 'ABGESCHLOSSEN' : 'EVENT LÄUFT'}</T>
-        <Text style={styles.title}>{session.name.toUpperCase()}</Text>
+        <Text style={[styles.title, { fontSize: fitPixelSize(session.name, 340, 30), lineHeight: fitPixelSize(session.name, 340, 30) + 4 }]}>
+          {session.name.toUpperCase()}
+        </Text>
         <T variant="body" style={{ color: colors.text2 }}>
           {session.quotes.length} Quoten · {hits} Treffer · {vetos} Veto
         </T>

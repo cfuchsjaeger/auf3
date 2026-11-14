@@ -67,7 +67,12 @@ interface StoreApi {
   ready: boolean;
   store: Store;
   session: Session | null;
-  startEvent(input: { name: string; players: string[]; meIndex: number }): Result;
+  startEvent(input: {
+    name: string;
+    players: (string | { name: string; profileId?: string })[];
+    meIndex: number;
+    crew?: { id: string; name: string };
+  }): Result;
   addPlayerToEvent(name: string): Result;
   setMe(playerId: string): void;
   newQuote(input: { challengerId: string; targetId: string; dare: string }): Result<string>;
@@ -134,10 +139,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       store,
       session: store.session,
 
-      startEvent({ name, players, meIndex }) {
+      startEvent({ name, players, meIndex, crew }) {
         const res = attempt(() => {
-          let s = createSession({ id: newId(), name, startedAt: Date.now() });
-          for (const p of players) s = addPlayer(s, { id: newId(), name: p });
+          let s = createSession({ id: newId(), name, startedAt: Date.now(), crew });
+          for (const p of players) {
+            const entry = typeof p === 'string' ? { name: p } : p;
+            s = addPlayer(s, { id: newId(), name: entry.name, profileId: entry.profileId });
+          }
           if (s.players.length < 2) throw new SessionError('emptyName', 'Mindestens zwei Leute.');
           return s;
         });

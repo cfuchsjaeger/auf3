@@ -11,3 +11,12 @@ export function rangeFromPosition(ratio: number, min: number, max: number): numb
   const clamped = Math.min(1, Math.max(0, ratio));
   return Math.round(min + clamped * (max - min));
 }
+
+/**
+ * Schriftgröße, bei der das längste Wort einer Pixel-Überschrift in eine Zeile passt.
+ * Silkscreen Bold braucht samt Laufweite rund 0,9 em pro Zeichen.
+ */
+export function fitPixelSize(text: string, width: number, max: number, min = 16): number {
+  const longest = Math.max(1, ...text.split(/\s+/).map((w) => w.length));
+  return Math.max(min, Math.min(max, Math.floor(width / (longest * 0.9))));
+}

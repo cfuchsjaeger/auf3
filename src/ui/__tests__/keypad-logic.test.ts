@@ -26,3 +26,13 @@ describe('rangeFromPosition', () => {
     expect(rangeFromPosition(9, 2, 50)).toBe(50);
   });
 });
+
+describe('fitPixelSize', () => {
+  it('lässt kurze Namen groß und verkleinert lange Wörter', async () => {
+    const { fitPixelSize } = await import('../keypad-logic');
+    expect(fitPixelSize('KORFU', 340, 30)).toBe(30);
+    expect(fitPixelSize('SCHNIADLERBOYS', 340, 30)).toBe(26);
+    expect(fitPixelSize('KROATIEN 2027', 340, 30)).toBe(30);
+    expect(fitPixelSize('A'.repeat(40), 340, 30)).toBe(16);
+  });
+});

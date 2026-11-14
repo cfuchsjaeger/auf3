@@ -18,6 +18,8 @@ export const MAX_PLAYERS = 12;
 export interface Player {
   id: string;
   name: string;
+  /** Konto des Spielers, wenn er aus einer Gruppe kommt. Gäste haben keins. */
+  profileId?: string;
 }
 
 export type DareStatus = 'open' | 'done' | 'vetoed';
@@ -36,6 +38,9 @@ export interface Dare {
 export interface Session {
   id: string;
   name: string;
+  /** Gruppe, aus der das Event gestartet wurde. Fehlt bei Events ohne Gruppe und bei alten Ständen. */
+  crewId?: string;
+  crewName?: string;
   startedAt: number;
   endedAt: number | null;
   players: Player[];
@@ -67,17 +72,31 @@ export class SessionError extends Error {
 
 export type IdFactory = () => string;
 
-export function createSession(input: { id: string; name: string; startedAt: number }): Session {
+export function createSession(input: {
+  id: string;
+  name: string;
+  startedAt: number;
+  crew?: { id: string; name: string };
+}): Session {
   const name = input.name.trim();
   if (!name) throw new SessionError('emptyName', 'Das Event braucht einen Namen.');
-  return { id: input.id, name, startedAt: input.startedAt, endedAt: null, players: [], quotes: [], dares: [] };
+  return {
+    id: input.id,
+    name,
+    startedAt: input.startedAt,
+    endedAt: null,
+    players: [],
+    quotes: [],
+    dares: [],
+    ...(input.crew ? { crewId: input.crew.id, crewName: input.crew.name } : {}),
+  };
 }
 
 function assertOpen(session: Session) {
   if (session.endedAt !== null) throw new SessionError('sessionEnded', 'Dieses Event ist abgeschlossen.');
 }
 
-export function addPlayer(session: Session, input: { id: string; name: string }): Session {
+export function addPlayer(session: Session, input: { id: string; name: string; profileId?: string }): Session {
   assertOpen(session);
   const name = input.name.trim();
   if (!name) throw new SessionError('emptyName', 'Name fehlt.');
@@ -90,7 +109,11 @@ export function addPlayer(session: Session, input: { id: string; name: string })
   if (session.players.length >= MAX_PLAYERS) {
     throw new SessionError('tooManyPlayers', `Maximal ${MAX_PLAYERS} Leute pro Event.`);
   }
-  return { ...session, players: [...session.players, { id: input.id, name }] };
+  if (input.profileId && session.players.some((p) => p.profileId === input.profileId)) {
+    throw new SessionError('duplicateName', `${name} ist schon dabei.`);
+  }
+  const player: Player = input.profileId ? { id: input.id, name, profileId: input.profileId } : { id: input.id, name };
+  return { ...session, players: [...session.players, player] };
 }
 
 export function playerById(session: Session, id: string): Player {
@@ -197,4 +220,20 @@ export function debtLedger(session: Session): { owedBy: string; owedTo: string; 
     map.set(key, entry);
   }
   return [...map.values()].sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Macht einen Namen im Event eindeutig: "Max" wird zu "Max 2", wenn es schon einen Max gibt.
+ * Kürzt so, dass die Höchstlänge hält.
+ */
+export function uniquePlayerName(existing: string[], wanted: string): string {
+  const base = wanted.trim().slice(0, MAX_PLAYER_NAME) || 'Gast';
+  const taken = new Set(existing.map((n) => n.toLowerCase()));
+  if (!taken.has(base.toLowerCase())) return base;
+  for (let i = 2; i < 100; i++) {
+    const suffix = ` ${i}`;
+    const candidate = `${base.slice(0, MAX_PLAYER_NAME - suffix.length).trimEnd()}${suffix}`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+  return base;
 }

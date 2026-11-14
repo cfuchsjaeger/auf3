@@ -12,7 +12,8 @@ Das Quotenspiel als App für iOS und Android. Jemand quotet dich, du setzt die Q
 | Bar-Modus mit einem Handy, offline, gespeichert auf dem Gerät | fertig, im Browser durchgespielt |
 | Haptik, Sounds, Umdreh-Erkennung | gebaut, auf echten Geräten noch nicht getestet |
 | Server-Schema für den Live-Modus mit zwei Handys | fertig, gegen Postgres getestet |
-| Login, Crews und Live-Modus in der App | offen, braucht ein Supabase-Projekt |
+| Gruppen: anonymes Konto mit Namen, gründen, per WhatsApp oder Nachricht einladen, per Link oder Code beitreten, mehrere Gruppen, Event aus Gruppe starten | fertig, mit zwei Nutzern gegen lokales Supabase getestet |
+| Ergebnisse zwischen Handys teilen, Live-Modus mit zwei Handys | offen |
 
 ## Voraussetzungen
 
@@ -28,6 +29,8 @@ npm test             # Spiellogik (Vitest)
 npm run test:db      # Datenbank-Funktionen und RLS gegen ein Wegwerf-Postgres 16
 npm run test:db:supabase  # dieselben Tests gegen das offizielle Supabase-Image (Docker)
 npm run test:e2e     # kompletter Abend im Browser, Screenshots in e2e/screenshots
+npm run test:e2e:gruppen  # zwei Nutzer: Gruppe, Einladung, Beitritt (braucht lokales Supabase, siehe unten)
+npm run db:types     # TypeScript-Typen aus dem lokalen Supabase-Schema neu erzeugen
 npm run typecheck
 npx expo lint
 ```
@@ -36,6 +39,22 @@ Expo Go aus dem App Store unterstützt nur bis SDK 54, diese App nutzt SDK 58. A
 
 - **Kostenlos mit Mac und Xcode:** Anleitung in [docs/ios-lokal.md](docs/ios-lokal.md). Läuft 7 Tage pro Installation.
 - **Mit Apple-Mitgliedschaft:** Expo Build verteilt die App per Link, siehe Profile in `eas.json`.
+
+## Gruppen und Supabase
+
+Gruppen laufen über Supabase mit anonymer Anmeldung: Name statt E-Mail. Im Supabase-Projekt muss dafür unter Authentication „Allow anonymous sign-ins“ eingeschaltet sein. Löscht jemand die App, ist sein Konto weg.
+
+Einladungen gehen als Text mit `auf3://join?code=…` und dem Code raus. WhatsApp macht eigene App-Links vermutlich nicht anklickbar, deshalb steht der Code immer dabei.
+
+Lokales Supabase für Tests, braucht Docker:
+
+```bash
+npx supabase start --workdir e2e
+```
+
+Die Konfiguration dafür liegt in `e2e/supabase`, nicht in `supabase/`, damit sie nie als Konfiguration des Live-Projekts gelesen wird.
+
+![Gruppen](docs/gruppen.png)
 
 ## Aufbau
 
