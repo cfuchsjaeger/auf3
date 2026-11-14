@@ -80,7 +80,8 @@ Grundsätze:
 - [Produkt- und Architekturplan](docs/plan.md) mit UI-Konzept und Umsetzungsstand
 - [Kostenlos aufs iPhone mit Xcode](docs/ios-lokal.md)
 - [Stand, Entscheidungen, offene Punkte](docs/stand.md)
-- [Plan Bar-Modus 2](docs/plan-bar-modus.md), Entwurf
+- [Plan Bar-Modus 2](docs/plan-bar-modus.md), Phase A freigegeben
+- [Sog: Vorschläge für Bar-Modus und App-Version](docs/plan-sog.md), Entwurf
 
 ## Bekannte Grenzen
 

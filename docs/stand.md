@@ -48,7 +48,7 @@ Zuletzt aktualisiert: 14.11.2026, nach dem ersten Build aufs iPhone. Diese Datei
 1. **Erster Build läuft auf dem iPhone** seit 14.11.2026, als Release mit kostenlosem Apple-Konto. Läuft 7 Tage, dann mit `npm run ios:lokal` neu installieren.
 2. **Am Gerät prüfen:** Haptik, Umdreh-Erkennung, Ton mit Stummschalter, Darstellung der WhatsApp-Einladung. Die Umdreh-Erkennung beruht auf dem Vorzeichen der Z-Achse laut Quellcode von expo-sensors und ist nie auf einem Gerät gelaufen.
 3. **Prüfen, ob „Allow anonymous sign-ins“ im Supabase-Projekt aktiv ist.** Ohne das scheitert der Name in den Gruppen mit einem erklärenden Fehler.
-4. **Bar-Modus 2:** Plan in `docs/plan-bar-modus.md`, wartet auf Freigabe. Kern: Laut-Modus ohne Weitergeben, weniger und weichere Töne, Haptik als Crescendo, Knapp-Moment, Revanche, weißer Rand beim Wischen.
+4. **Bar-Modus 2:** Plan in `docs/plan-bar-modus.md`. Phase A (Ton, Haptik, Reveal, Knapp, weißer Rand) ist freigegeben, noch nicht gebaut. Phase B (Laut-Modus, Revanche, letzte Aufgaben) ist gestrichen, Grund nicht genannt. Vorschläge für mehr Sog in `docs/plan-sog.md`, ohne Freigabe.
 5. **Geparkt: Gruppen statt Events.** Wunsch ist eine Gruppe wie ein WhatsApp-Chat, in dem man sich ständig quotet, Events erst später. Offen: Wie kommen Freunde ohne Mac an die App, Mitgliedschaft oder Web-Version? Bleibt der Bar-Modus mit einem Handy als Option in der Gruppe?
 6. **Entscheidung offen:** Ergebnisse zwischen Handys teilen, also gemeinsames Schuldenbuch und Ranglisten pro Gruppe. Bisher bleiben Ergebnisse auf dem Handy, auf dem gespielt wurde.
 7. **Live-Modus mit zwei Handys** in der App anbinden. Das Server-Schema ist fertig.
