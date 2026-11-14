@@ -1,6 +1,6 @@
 # Stand und Übergabe
 
-Zuletzt aktualisiert: 14.11.2026. Diese Datei ist das Gedächtnis des Projekts zwischen Sitzungen. Wer weitermacht, liest sie zuerst und aktualisiert sie am Ende.
+Zuletzt aktualisiert: 14.11.2026, nach dem ersten Build aufs iPhone. Diese Datei ist das Gedächtnis des Projekts zwischen Sitzungen. Wer weitermacht, liest sie zuerst und aktualisiert sie am Ende.
 
 ## Wo was liegt
 
@@ -36,6 +36,8 @@ Zuletzt aktualisiert: 14.11.2026. Diese Datei ist das Gedächtnis des Projekts z
 - **`expo run:ios` erzeugt `ios/` nur, wenn der Ordner fehlt.** Deshalb erzeugen `ios:lokal` und `ios:lokal:dev` ihn jedes Mal neu.
 - **„0 valid identities found“:** Das Zwischenzertifikat Apple WWDR G3 fehlte. Download: https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
 - **„The developer disk image could not be mounted“:** iPhone mit iOS 27, Mac mit Xcode 26.6. Braucht Xcode 27, das laut Blogquelle macOS Tahoe 26.6 oder neuer verlangt.
+- **Schlüsselbund-Fenster beim Signieren:** `codesign` fragt nach dem Passwort des Schlüsselbunds „Anmeldung“, also dem Mac-Passwort, und das für jeden Bestandteil der App neu. Einmal **Always Allow** klicken. Bleibt das Fenster hängen: `security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k <Passwort> ~/Library/Keychains/login.keychain-db`, Passwort per `read -s` übergeben, nicht in den Verlauf tippen. Prüfen, ob das Passwort passt: `security unlock-keychain ~/Library/Keychains/login.keychain-db`.
+- **„invalid code signature … profile has not been explicitly trusted“ beim ersten Start:** Kein Build-Fehler. Auf dem iPhone unter Einstellungen, Allgemein, VPN und Geräteverwaltung dem Entwicklerprofil vertrauen, dann die App antippen. Kein Neubau nötig.
 - **Expo Go im App Store endet bei SDK 54.** Die App nutzt SDK 58 und braucht einen eigenen Build.
 - **Supabase gibt neuen Funktionen Rechte für `anon`.** Jede Migration entzieht sie ausdrücklich, `crews.test.sql` prüft das.
 - **Typen-Erzeugung:** Eine direkte Umleitung hat die Typdatei bei laufendem Fehler überschrieben. `npm run db:types` schreibt jetzt nur bei Erfolg.
@@ -43,7 +45,7 @@ Zuletzt aktualisiert: 14.11.2026. Diese Datei ist das Gedächtnis des Projekts z
 
 ## Offene Punkte
 
-1. **Xcode 27 installieren** und den ersten Build aufs iPhone bringen.
+1. **Erster Build läuft auf dem iPhone** seit 14.11.2026, als Release mit kostenlosem Apple-Konto. Läuft 7 Tage, dann mit `npm run ios:lokal` neu installieren.
 2. **Am Gerät prüfen:** Haptik, Umdreh-Erkennung, Ton mit Stummschalter, Darstellung der WhatsApp-Einladung. Die Umdreh-Erkennung beruht auf dem Vorzeichen der Z-Achse laut Quellcode von expo-sensors und ist nie auf einem Gerät gelaufen.
 3. **Prüfen, ob „Allow anonymous sign-ins“ im Supabase-Projekt aktiv ist.** Ohne das scheitert der Name in den Gruppen mit einem erklärenden Fehler.
 4. **Entscheidung offen:** Ergebnisse zwischen Handys teilen, also gemeinsames Schuldenbuch und Ranglisten pro Gruppe. Bisher bleiben Ergebnisse auf dem Handy, auf dem gespielt wurde.

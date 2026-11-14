@@ -62,6 +62,11 @@ cd ~/auf3 && git pull && npm ci && npm run ios:lokal
 
 ## Wenn etwas schiefgeht
 
+- **Fenster „codesign wants to access key“:** Mac-Passwort eingeben und **Always Allow** klicken, sonst fragt es für jeden Bestandteil der App erneut. Wird das Passwort abgelehnt, steht der Ausweg in `docs/stand.md` unter Fallstricke.
+- **„profile has not been explicitly trusted by the user“:** Die App ist installiert. Auf dem iPhone unter Einstellungen, Allgemein, VPN und Geräteverwaltung dem Profil vertrauen, dann die App antippen.
+- **„0 valid identities found“:** Apples Zwischenzertifikat fehlt, siehe `docs/stand.md`.
+- **„The developer disk image could not be mounted“:** Xcode ist älter als iOS auf dem iPhone. Xcode aktualisieren.
+
 - **„Node.js is outdated“ oder „glob is not a function“:** Node ist zu alt. Version 22.13 oder neuer installieren, neues Terminal öffnen, dann `npm ci` und den Befehl erneut ausführen.
 - **„expected package.json path does not exist“:** Der Befehl läuft nicht im Projektordner. Mit `cd ~/auf3` wechseln und mit `pwd` prüfen.
 - **`git pull` meldet Änderungen an `package.json`:** Ältere Builds haben dort zwei Skripte umgestellt. Mit `git checkout package.json` zurücksetzen, dann erneut pullen. Ab diesem Stand passiert das nicht mehr.
