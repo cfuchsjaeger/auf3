@@ -14,6 +14,10 @@ Das Quotenspiel als App für iOS und Android. Jemand quotet dich, du setzt die Q
 | Server-Schema für den Live-Modus mit zwei Handys | fertig, gegen Postgres getestet |
 | Login, Crews und Live-Modus in der App | offen, braucht ein Supabase-Projekt |
 
+## Voraussetzungen
+
+Node.js 22.13 oder neuer. Expo SDK 58 läuft mit älteren Versionen nicht.
+
 ## Befehle
 
 ```bash
