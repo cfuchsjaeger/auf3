@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Baut die Web-Version gegen das lokale Supabase und spielt Gruppen mit zwei Nutzern durch.
-# Voraussetzung: npx supabase start --workdir e2e (Docker).
+# Voraussetzung: npm run db:start (Docker).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 KEY="${LOCAL_SUPABASE_KEY:-sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH}"

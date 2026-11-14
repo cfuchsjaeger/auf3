@@ -40,6 +40,7 @@
     "@types/react": "~19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-expo": "~58.0.4\n58.0.4",
+    "supabase": "^3.1.0",
     "typescript": "~6.0.3",
     "vitest": "^3.2.7"
   },
@@ -55,9 +56,11 @@
     "test:e2e": "bash e2e/run.sh",
     "test:db:supabase": "bash supabase/tests/run-supabase.sh",
     "ios:lokal": "APP_VARIANT=lokal EXPO_NO_GIT_STATUS=1 expo prebuild -p ios --clean && APP_VARIANT=lokal expo run:ios --device --configuration Release",
-    "db:types": "supabase gen types --lang typescript --local --workdir e2e > src/lib/database.types.ts",
+    "db:types": "bash scripts/db-types.sh",
     "test:e2e:gruppen": "bash e2e/run-gruppen.sh",
-    "ios:lokal:dev": "APP_VARIANT=lokal EXPO_NO_GIT_STATUS=1 expo prebuild -p ios --clean && APP_VARIANT=lokal expo run:ios --device"
+    "ios:lokal:dev": "APP_VARIANT=lokal EXPO_NO_GIT_STATUS=1 expo prebuild -p ios --clean && APP_VARIANT=lokal expo run:ios --device",
+    "db:start": "supabase start --workdir e2e -x studio,imgproxy,storage-api,edge-runtime,logflare,vector,mailpit,realtime,postgres-meta,supavisor",
+    "db:stop": "supabase stop --workdir e2e"
   },
   "private": true
 }

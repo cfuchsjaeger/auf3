@@ -1,6 +1,6 @@
 // Zwei Handys, zwei Konten: Gruppe gründen, per WhatsApp einladen, per Link beitreten,
 // zweite Gruppe, mit Code beitreten, Event aus Gruppe starten, Gruppe verlassen.
-// Braucht ein laufendes lokales Supabase (npx supabase start --workdir e2e). Aufruf: npm run test:e2e:gruppen
+// Braucht ein laufendes lokales Supabase (npm run db:start). Aufruf: npm run test:e2e:gruppen
 const { chromium } = require('playwright');
 const path = require('node:path');
 const fs = require('node:fs');

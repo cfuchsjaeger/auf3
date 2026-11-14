@@ -29,7 +29,7 @@ npm test             # Spiellogik (Vitest)
 npm run test:db      # Datenbank-Funktionen und RLS gegen ein Wegwerf-Postgres 16
 npm run test:db:supabase  # dieselben Tests gegen das offizielle Supabase-Image (Docker)
 npm run test:e2e     # kompletter Abend im Browser, Screenshots in e2e/screenshots
-npm run test:e2e:gruppen  # zwei Nutzer: Gruppe, Einladung, Beitritt (braucht lokales Supabase, siehe unten)
+npm run test:e2e:gruppen  # zwei Nutzer: Gruppe, Einladung, Beitritt, braucht npm run db:start
 npm run db:types     # TypeScript-Typen aus dem lokalen Supabase-Schema neu erzeugen
 npm run typecheck
 npx expo lint
@@ -49,7 +49,7 @@ Einladungen gehen als Text mit `auf3://join?code=…` und dem Code raus. WhatsAp
 Lokales Supabase für Tests, braucht Docker:
 
 ```bash
-npx supabase start --workdir e2e
+npm run db:start
 ```
 
 Die Konfiguration dafür liegt in `e2e/supabase`, nicht in `supabase/`, damit sie nie als Konfiguration des Live-Projekts gelesen wird.
@@ -79,6 +79,7 @@ Grundsätze:
 
 - [Produkt- und Architekturplan](docs/plan.md) mit UI-Konzept und Umsetzungsstand
 - [Kostenlos aufs iPhone mit Xcode](docs/ios-lokal.md)
+- [Stand, Entscheidungen, offene Punkte](docs/stand.md)
 
 ## Bekannte Grenzen
 

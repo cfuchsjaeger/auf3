@@ -45,3 +45,6 @@ example
 # E2E
 e2e/screenshots/
 dist-e2e/
+
+# Lokaler Cache der Supabase-CLI
+supabase/.temp/

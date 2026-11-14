@@ -2,7 +2,7 @@
 
 # Auf 3
 
-Quotenspiel-App für Freunde (iOS und Android, Expo SDK 58). Oberfläche und Kommentare sind deutsch, Code und Kommentare im Code auch. Produktplan und UI-Konzept stehen in `docs/plan.md`.
+Quotenspiel-App für Freunde (iOS und Android, Expo SDK 58). Oberfläche und Kommentare sind deutsch, Code und Kommentare im Code auch. Produktplan und UI-Konzept stehen in `docs/plan.md`. Aktueller Stand, Entscheidungen, Fallstricke und offene Punkte stehen in `docs/stand.md`: zu Beginn lesen, am Ende jeder Arbeitssitzung aktualisieren.
 
 ## Voraussetzungen und Befehle
 
@@ -10,7 +10,8 @@ Quotenspiel-App für Freunde (iOS und Android, Expo SDK 58). Oberfläche und Kom
 - `npm test` Spiellogik, `npm run typecheck`, `npx expo lint`. Alle drei vor jedem Commit grün.
 - `npm run test:e2e` spielt einen Abend im Browser durch, braucht Chromium über Playwright.
 - `npm run test:db:supabase` testet die Datenbank gegen das Supabase-Image, braucht Docker.
-- `npm run test:e2e:gruppen` spielt Gruppen mit zwei Nutzern durch, braucht `npx supabase start --workdir e2e`.
+- `npm run db:start` startet ein lokales Supabase in Docker, `npm run db:stop` beendet es.
+- `npm run test:e2e:gruppen` spielt Gruppen mit zwei Nutzern durch, braucht `npm run db:start`.
 - `npm run db:types` erzeugt `src/lib/database.types.ts` nach jeder Migration neu.
 - Im Simulator: `npx expo run:ios`, danach zeigt Fast Refresh Änderungen sofort.
 
